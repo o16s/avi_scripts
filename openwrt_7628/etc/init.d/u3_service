@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=15
+USE_PROCD=1
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /bin/sh -c 'while true; do
+        /bin/u3.sh
+        INTERVAL=$(uci get camera.settings.interval 2>/dev/null || echo 10)
+	sleep $INTERVAL
+    done'
+    procd_set_param respawn 4 20 20
+    procd_close_instance
+}
+stop_service() {
+    # Optional: Add any cleanup tasks here
+        service_stop /bin/sh
+}
+service_triggers() {
+    procd_add_reload_trigger "camera"
+}

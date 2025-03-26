@@ -1,0 +1,9 @@
+* * * * * /bin/report_ip.sh
+
+# Restart at 3:30am daily to prevent 4am failures
+30 3 * * * /etc/init.d/mjpg-streamer restart && sleep 5 && /etc/init.d/u3_service restart
+
+# Emergency recovery if camera stops working
+*/5 * * * * ps | grep "/bin/u3.sh" | grep -v grep >/dev/null || /etc/init.d/u3_service restart
+
+#* * * * * /bin/u3.sh
