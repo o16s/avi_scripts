@@ -15,6 +15,21 @@ exec 200>"$LOCKFILE" || exit 1
 flock -n 200 || exit 1
 
 # --- Functions ---
+record_audio() {
+    local output_file="$1"
+    local duration="$2"
+    
+    # Record using the webcam's native 32kHz sample rate
+    arecord -d "$duration" -f S16_LE -r 32000 -c 2 -D hw:0,0 "$output_file" >/dev/null 2>&1
+    
+    # Check if recording was successful
+    if [ $? -eq 0 ] && [ -s "$output_file" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 blacken_regions() {
     local input="$1"
 
@@ -54,6 +69,27 @@ upload_to_azure() {
 # --- Main ---
 DATE=$(date -u +%d-%m-%Y)
 TIME=$(date -u +%H_%M_%S)
+
+# Process audio if enabled
+if [ "$AUDIO_ENABLED" = "true" ]; then
+    AUDIO_FILE="/tmp/audio_$TIME.wav"
+    AUDIO_BLOB_NAME="$CUSTOMER/$DATE/$CAMNAME/audio_$TIME.wav"
+    AUDIO_LATEST_NAME="$CUSTOMER/latest/$CAMNAME.wav"
+    
+    # Record audio for specified duration (default to 5 seconds if not set)
+    AUDIO_DURATION="${AUDIO_DURATION:-5}"
+    
+    if record_audio "$AUDIO_FILE" "$AUDIO_DURATION"; then
+        # Upload audio files
+        upload_to_azure "$AUDIO_FILE" "$AUDIO_BLOB_NAME"
+        upload_to_azure "$AUDIO_FILE" "$AUDIO_LATEST_NAME"
+    fi
+    
+    # Clean up audio file
+    rm -f "$AUDIO_FILE"
+fi
+
+# Process image
 SNAPSHOT_FILE="/tmp/snapshot_$TIME.jpg"
 BLOB_NAME="$CUSTOMER/$DATE/$CAMNAME/snapshot_$TIME.jpg"
 LATEST_NAME="$CUSTOMER/latest/$CAMNAME.jpg"
