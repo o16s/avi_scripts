@@ -19,14 +19,33 @@ record_audio() {
     local output_file="$1"
     local duration="$2"
     
-    # Record using the webcam's native 32kHz sample rate
-    arecord -d "$duration" -f S16_LE -r 32000 -c 2 -D hw:0,0 "$output_file" >/dev/null 2>&1
-    
-    # Check if recording was successful
-    if [ $? -eq 0 ] && [ -s "$output_file" ]; then
+    # Use the already-running audio capture
+    if [ -p "/tmp/audio_stream.fifo" ]; then
+        # Capture from the named pipe and convert to WAV
+        (
+            # Add WAV header to raw audio
+            (
+                # Generate WAV header for 32000Hz, 16-bit, 2 channel audio
+                printf "RIFF\x24\xf0\xff\x7f" # RIFF chunk
+                printf "WAVE"                  # WAVE identifier
+                printf "fmt \x10\x00\x00\x00"  # fmt chunk size = 16 bytes
+                printf "\x01\x00"              # format = 1 (PCM)
+                printf "\x02\x00"              # channels = 2
+                printf "\x00\x7d\x00\x00"      # sample rate = 32000
+                printf "\x00\xf4\x01\x00"      # byte rate = 32000*2*2 = 128000
+                printf "\x04\x00"              # block align = 2*2 = 4
+                printf "\x10\x00"              # bits per sample = 16
+                printf "data\x00\xf0\xff\x7f"  # data chunk header
+            )
+            # Read from named pipe for specified duration
+            dd bs=4 count=$((32000 * $duration)) if=/tmp/audio_stream.fifo 2>/dev/null
+        ) > "$output_file"
+        
         return 0
     else
-        return 1
+        # Fallback to regular recording if pipe not available
+        arecord -d "$duration" -f S16_LE -r 32000 -c 2 -D hw:0,0 "$output_file" >/dev/null 2>&1
+        return $?
     fi
 }
 
