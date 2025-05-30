@@ -19,6 +19,8 @@ echo 0 > /sys/class/leds/green:wlan/brightness
 echo 491 > /sys/class/gpio/export
 echo out > /sys/class/gpio/gpio491/direction
 echo 1 > /sys/class/gpio/gpio491/value  # HIGH
+sleep 10
+echo "waiting for the pin to settle"
 
 # --- Functions ---
 record_audio() {
