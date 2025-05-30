@@ -2,11 +2,8 @@
 
 # Load environment variables
 . /root/.env
-
-# Get the br-lan IP address
-IP_ADDRESS=$(ip addr show br-lan | grep -w inet | awk '{print $2}' | cut -d/ -f1)
-
-# Get hostname
+# Get all br-lan IP addresses and concatenate them
+IP_ADDRESS=$(ip addr show br-lan | grep -w inet | awk '{print $2}' | cut -d/ -f1 | tr '\n' ',' | sed 's/,$//; s/,/\\,/g')
 HOSTNAME=$(uname -n)
 
 # Get basic system metrics
@@ -15,8 +12,7 @@ MEM_TOTAL=$(grep MemTotal /proc/meminfo | awk '{print $2}')
 MEM_FREE=$(grep MemFree /proc/meminfo | awk '{print $2}')
 DISK_USAGE=$(df -h | grep -E '/overlay|/$' | head -1 | awk '{print $5}' | tr -d '%')
 PING_MS=$(ping -c 1 8.8.8.8 | grep 'time=' | cut -d '=' -f 4 | cut -d ' ' -f 1 || echo "0")
-MAC_ADDRESS=$(ip link | grep "link/ether" | head -1 | awk '{print $2}' 2>/dev/null)
-
+MAC_ADDRESS=$(ip link | grep "link/ether" | head -1 | awk '{print $2}' | tr -d ':' 2>/dev/null)
 
 # Check if mjpg-streamer is running
 if ps | grep "mjpg_streamer" | grep -v grep >/dev/null; then
