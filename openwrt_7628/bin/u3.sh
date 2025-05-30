@@ -15,6 +15,10 @@ exec 200>"$LOCKFILE" || exit 1
 flock -n 200 || exit 1
 echo 0 > /sys/class/leds/green:wlan/brightness
 
+# Turn on USB device load switch GPIO11, with OpenWrt 22.03.5, r20134-5f15225c1e
+echo 491 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio491/direction
+echo 1 > /sys/class/gpio/gpio491/value  # HIGH
 
 # --- Functions ---
 record_audio() {
