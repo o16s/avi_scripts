@@ -1,0 +1,198 @@
+<%+header%>
+
+<%
+-- Get current host dynamically on server side
+local current_host = luci.http.getenv("HTTP_HOST") or luci.http.getenv("SERVER_NAME") or "localhost"
+local stream_url = "http://" .. current_host .. ":8080/?action=stream"
+local snapshot_url = "http://" .. current_host .. ":8080/?action=snapshot"
+local snapshot_endpoint = luci.dispatcher.build_url("admin", "services", "camera", "snapshot")
+local env_settings_url = luci.dispatcher.build_url("admin", "services", "camera", "env")
+%>
+
+<script type="text/javascript">
+//<![CDATA[
+var streamUrl = '<%=stream_url%>';
+var snapshotUrl = '<%=snapshot_url%>';
+var snapshotEndpoint = '<%=snapshot_endpoint%>';
+
+function refreshStream() {
+    var img = document.getElementById('cameraStream');
+    img.src = streamUrl + '?t=' + new Date().getTime();
+    document.getElementById('lastRefresh').textContent = new Date().toLocaleString();
+}
+
+function takeSnapshot() {
+    window.open(snapshotEndpoint, '_blank');
+}
+
+function toggleFullscreen() {
+    var container = document.getElementById('streamContainer');
+    if (container.classList.contains('fullscreen')) {
+        container.classList.remove('fullscreen');
+    } else {
+        container.classList.add('fullscreen');
+    }
+}
+
+// Update timestamp every second
+setInterval(function() {
+    document.getElementById('timestamp').textContent = new Date().toLocaleString();
+}, 1000);
+
+// Handle ESC key for fullscreen exit
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var container = document.getElementById('streamContainer');
+        if (container.classList.contains('fullscreen')) {
+            toggleFullscreen();
+        }
+    }
+});
+//]]>
+</script>
+
+<style type="text/css">
+.camera-controls {
+    margin: 15px 0;
+    text-align: center;
+}
+.camera-controls input, .camera-controls .cbi-button {
+    margin: 0 5px;
+}
+.stream-container {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+}
+.stream-container img {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+}
+.stream-container.fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: black !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.stream-container.fullscreen img {
+    max-width: 95vw !important;
+    max-height: 95vh !important;
+    border: none !important;
+}
+.camera-info table {
+    width: 100%;
+}
+.camera-info td {
+    padding: 5px;
+    border: none;
+}
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+.status-online {
+    background-color: #5cb85c;
+}
+.status-offline {
+    background-color: #d9534f;
+}
+</style>
+
+<h2>Camera Live Stream</h2>
+
+<!-- Navigation -->
+<div class="cbi-section">
+    <div class="cbi-section-node">
+        <div style="text-align: center; margin: 10px 0;">
+            <a href="<%=env_settings_url%>" class="cbi-button cbi-button-edit">⚙️ Camera Settings</a>
+        </div>
+    </div>
+</div>
+
+<!-- Status Section -->
+<div class="cbi-section">
+    <h3>Camera Status</h3>
+    <div class="cbi-section-node">
+        <div class="camera-info">
+            <table class="cbi-section-table">
+                <tr>
+                    <td width="20%"><strong>Status:</strong></td>
+                    <td width="30%">
+                        <span class="status-indicator status-online" id="statusIndicator"></span>
+                        <span id="statusText">Online</span>
+                    </td>
+                    <td width="20%"><strong>Time:</strong></td>
+                    <td width="30%"><span id="timestamp"><%=os.date("%c")%></span></td>
+                </tr>
+                <tr>
+                    <td><strong>Host:</strong></td>
+                    <td><%=current_host%></td>
+                    <td><strong>Port:</strong></td>
+                    <td>8080</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Controls -->
+<div class="cbi-section">
+    <h3>Stream Controls</h3>
+    <div class="cbi-section-node">
+        <div class="camera-controls">
+            <input type="button" class="cbi-button" value="Refresh" onclick="refreshStream()" />
+            <input type="button" class="cbi-button cbi-button-save" value="Snapshot" onclick="takeSnapshot()" />
+            <input type="button" class="cbi-button" value="Fullscreen" onclick="toggleFullscreen()" />
+        </div>
+    </div>
+</div>
+
+<!-- Live Stream -->
+<div class="cbi-section">
+    <h3>Live View</h3>
+    <div class="cbi-section-node">
+        <div id="streamContainer" class="stream-container">
+            <img id="cameraStream" 
+                 src="<%=stream_url%>" 
+                 alt="Camera Stream Loading..." 
+                 onerror="document.getElementById('statusIndicator').className='status-indicator status-offline'; document.getElementById('statusText').textContent='Offline';" 
+                 onload="document.getElementById('statusIndicator').className='status-indicator status-online'; document.getElementById('statusText').textContent='Online';" />
+        </div>
+    </div>
+</div>
+
+<!-- Stream Info -->
+<div class="cbi-section">
+    <h3>Stream Information</h3>
+    <div class="cbi-section-node">
+        <div class="camera-info">
+            <table class="cbi-section-table">
+                <tr>
+                    <td width="25%"><strong>Stream URL:</strong></td>
+                    <td><code><%=stream_url%></code></td>
+                </tr>
+                <tr>
+                    <td><strong>Snapshot URL:</strong></td>
+                    <td><code><%=snapshot_url%></code></td>
+                </tr>
+                <tr>
+                    <td><strong>Last Refresh:</strong></td>
+                    <td><span id="lastRefresh"><%=os.date("%c")%></span></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<%+footer%>
