@@ -3,6 +3,9 @@
 # OpenWrt Camera System Installer - Space-efficient version
 echo "Installing OpenWrt Camera System..."
 
+# install dependencies not in image
+opkg update && opkg install v4l-utils
+
 # Step 1: Create temp directory and prepare environment
 cd /tmp
 rm -rf avi_scripts_temp install.tar.gz
