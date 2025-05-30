@@ -6,9 +6,6 @@
 # Get the br-lan IP address
 IP_ADDRESS=$(ip addr show br-lan | grep -w inet | awk '{print $2}' | cut -d/ -f1)
 
-# Report the IP address to uptime monitoring
-curl -s "${UPTIME_API_URL}?status=up&msg=IP_${IP_ADDRESS}"
-
 # Get hostname
 HOSTNAME=$(uname -n)
 
