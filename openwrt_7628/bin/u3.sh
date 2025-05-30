@@ -13,6 +13,8 @@ fi
 LOCKFILE="/var/lock/u3.lock"
 exec 200>"$LOCKFILE" || exit 1
 flock -n 200 || exit 1
+echo 0 > /sys/class/leds/green:wlan/brightness
+
 
 # --- Functions ---
 record_audio() {

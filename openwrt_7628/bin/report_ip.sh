@@ -15,6 +15,8 @@ MEM_TOTAL=$(grep MemTotal /proc/meminfo | awk '{print $2}')
 MEM_FREE=$(grep MemFree /proc/meminfo | awk '{print $2}')
 DISK_USAGE=$(df -h | grep -E '/overlay|/$' | head -1 | awk '{print $5}' | tr -d '%')
 PING_MS=$(ping -c 1 8.8.8.8 | grep 'time=' | cut -d '=' -f 4 | cut -d ' ' -f 1 || echo "0")
+MAC_ADDRESS=$(ip link | grep "link/ether" | head -1 | awk '{print $2}' 2>/dev/null)
+
 
 # Check if mjpg-streamer is running
 if ps | grep "mjpg_streamer" | grep -v grep >/dev/null; then
@@ -34,7 +36,7 @@ fi
 VIDEO_DEVICES_COUNT=$(ls -1 /dev/video* 2>/dev/null | wc -l || echo "0")
 
 # Create data point in line protocol format
-DATA="openwrt_7628,host=$HOSTNAME,ip=$IP_ADDRESS load=$LOAD,mem_total=$MEM_TOTAL,mem_free=$MEM_FREE,disk_usage=$DISK_USAGE,ping_ms=$PING_MS,mjpg_running=$MJPG_RUNNING,u3_running=$U3_RUNNING,video_devices=$VIDEO_DEVICES_COUNT"
+DATA="openwrt_7628,host=$HOSTNAME,ip=$IP_ADDRESS,mac=$MAC_ADDRESS load=$LOAD,mem_total=$MEM_TOTAL,mem_free=$MEM_FREE,disk_usage=$DISK_USAGE,ping_ms=$PING_MS,mjpg_running=$MJPG_RUNNING,u3_running=$U3_RUNNING,video_devices=$VIDEO_DEVICES_COUNT"
 
 # Send to InfluxDB
 curl -s -XPOST "https://${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET}" \
