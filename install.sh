@@ -139,6 +139,209 @@ echo "Restarting services..."
 cd /
 rm -rf /tmp/avi_scripts_temp /tmp/install.tar.gz
 
+
+# Step X: Install LuCI Camera Module (Live Stream Only)
+echo "Installing LuCI Camera live stream module..."
+
+# Create LuCI module directories
+mkdir -p /usr/lib/lua/luci/controller/camera
+mkdir -p /usr/lib/lua/luci/view/camera
+
+# Create simplified controller file
+cat > /usr/lib/lua/luci/controller/camera/camera.lua << 'EOF'
+module("luci.controller.camera.camera", package.seeall)
+
+function index()
+    local page
+    
+    page = entry({"admin", "services", "camera"}, template("camera/live"), _("Camera"), 60)
+    page.leaf = true
+    page.acl_depends = { "luci-app-camera" }
+    
+    page = entry({"admin", "services", "camera", "snapshot"}, call("action_snapshot"), nil)
+    page.leaf = true
+end
+
+function action_snapshot()
+    local http = require "luci.http"
+    local sys = require "luci.sys"
+    
+    -- Get snapshot from mjpg-streamer
+    local snapshot_cmd = "curl -s --max-time 5 'http://localhost:8080/?action=snapshot'"
+    local snapshot_data = sys.exec(snapshot_cmd)
+    
+    if snapshot_data and #snapshot_data > 0 then
+        http.header("Content-Type", "image/jpeg")
+        http.header("Content-Disposition", "attachment; filename=snapshot_" .. os.date("%Y%m%d_%H%M%S") .. ".jpg")
+        http.write(snapshot_data)
+    else
+        http.status(404, "Not Found")
+        http.write("Camera not available")
+    end
+end
+EOF
+
+# Create live stream template
+cat > /usr/lib/lua/luci/view/camera/live.htm << 'EOF'
+<%#
+    Camera Live Stream View
+-%>
+
+<%+header%>
+
+<script type="text/javascript">
+    var streamUrl = 'http://' + window.location.hostname + ':8080/?action=stream';
+    var snapshotUrl = '<%=url("admin/services/camera/snapshot")%>';
+    
+    function refreshStream() {
+        var img = document.getElementById('cameraStream');
+        img.src = streamUrl + '?t=' + new Date().getTime();
+    }
+    
+    function takeSnapshot() {
+        window.open(snapshotUrl, '_blank');
+    }
+    
+    function toggleFullscreen() {
+        var container = document.getElementById('streamContainer');
+        if (container.classList.contains('fullscreen')) {
+            container.classList.remove('fullscreen');
+        } else {
+            container.classList.add('fullscreen');
+        }
+    }
+    
+    // Update timestamp every second
+    setInterval(function() {
+        document.getElementById('timestamp').innerHTML = new Date().toLocaleString();
+    }, 1000);
+</script>
+
+<style>
+    .camera-controls {
+        margin: 10px 0;
+        text-align: center;
+    }
+    .camera-controls .btn {
+        margin: 0 5px;
+        padding: 8px 16px;
+    }
+    .stream-container {
+        text-align: center;
+        margin: 20px 0;
+        position: relative;
+    }
+    .stream-container img {
+        max-width: 100%;
+        height: auto;
+        border: 2px solid #ddd;
+        border-radius: 4px;
+    }
+    .stream-container.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .stream-container.fullscreen img {
+        max-width: 95vw;
+        max-height: 95vh;
+        border: none;
+    }
+    .camera-info {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+    }
+    .status-online { color: #28a745; font-weight: bold; }
+    .status-offline { color: #dc3545; font-weight: bold; }
+</style>
+
+<h2><%:Camera Live Stream%></h2>
+
+<div class="camera-info">
+    <div class="table">
+        <div class="tr">
+            <div class="td left" style="width: 25%">
+                <strong><%:Status%>:</strong>
+                <span id="status" class="status-online"><%:Online%></span>
+            </div>
+            <div class="td left" style="width: 40%">
+                <strong><%:Stream URL%>:</strong>
+                <code>http://<%=luci.http.getenv("HTTP_HOST") or "router-ip"%>:8080/?action=stream</code>
+            </div>
+            <div class="td left" style="width: 35%">
+                <strong><%:Last Update%>:</strong>
+                <span id="timestamp"><%=os.date("%c")%></span>
+            </div>
+        </tr>
+    </div>
+</div>
+
+<div class="camera-controls">
+    <input type="button" class="btn cbi-button cbi-button-apply" value="<%:Refresh Stream%>" onclick="refreshStream()" />
+    <input type="button" class="btn cbi-button cbi-button-save" value="<%:Take Snapshot%>" onclick="takeSnapshot()" />
+    <input type="button" class="btn cbi-button" value="<%:Fullscreen%>" onclick="toggleFullscreen()" />
+</div>
+
+<div class="stream-container" id="streamContainer">
+    <img id="cameraStream" src="" alt="<%:Camera Stream%>" 
+         onerror="document.getElementById('status').className='status-offline'; document.getElementById('status').innerHTML='<%:Offline%>'" 
+         onload="document.getElementById('status').className='status-online'; document.getElementById('status').innerHTML='<%:Online%>'" />
+</div>
+
+<script>
+    // Initialize stream
+    document.getElementById('cameraStream').src = streamUrl;
+    
+    // Update timestamp immediately
+    document.getElementById('timestamp').innerHTML = new Date().toLocaleString();
+    
+    // Handle ESC key to exit fullscreen
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('streamContainer').classList.remove('fullscreen');
+        }
+    });
+</script>
+
+<%+footer%>
+EOF
+
+# Create basic translation file
+mkdir -p /usr/lib/lua/luci/i18n
+cat > /usr/lib/lua/luci/i18n/camera.en.lua << 'EOF'
+return {
+    ["Camera"] = "Camera",
+    ["Camera Live Stream"] = "Camera Live Stream",
+    ["Status"] = "Status",
+    ["Online"] = "Online", 
+    ["Offline"] = "Offline",
+    ["Stream URL"] = "Stream URL",
+    ["Last Update"] = "Last Update",
+    ["Refresh Stream"] = "Refresh Stream",
+    ["Take Snapshot"] = "Take Snapshot",
+    ["Fullscreen"] = "Fullscreen",
+    ["Camera Stream"] = "Camera Stream"
+}
+EOF
+
+# Restart LuCI to load the new module
+echo "Restarting LuCI..."
+/etc/init.d/uhttpd restart
+
+echo "✅ LuCI Camera live stream installed!"
+echo "📷 Access at: Services → Camera"
+
+
+
 echo ""
 echo "✅ Installation/Update complete!"
 echo ""
