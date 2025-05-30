@@ -3,8 +3,22 @@
 # OpenWrt Camera System Installer - Space-efficient version with overwrite support
 echo "Installing OpenWrt Camera System..."
 
-# install dependencies not in image
-opkg update && opkg install v4l-utils
+# Check and install dependencies if needed
+echo "Checking dependencies..."
+
+if command -v v4l2-ctl >/dev/null 2>&1; then
+    echo "✅ v4l-utils already installed"
+else
+    echo "Installing v4l-utils..."
+    opkg update && opkg install v4l-utils
+    
+    if command -v v4l2-ctl >/dev/null 2>&1; then
+        echo "✅ v4l-utils installed successfully"
+    else
+        echo "❌ Failed to install v4l-utils"
+        exit 1
+    fi
+fi
 
 # Step 1: Create temp directory and prepare environment
 cd /tmp
