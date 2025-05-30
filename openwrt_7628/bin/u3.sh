@@ -22,6 +22,21 @@ echo 1 > /sys/class/gpio/gpio491/value  # HIGH
 sleep 10
 echo "waiting for the pin to settle"
 
+# --- Configure Camera Settings ---
+# Call the camera setup script
+if [ -f "./camsetup.sh" ]; then
+    echo "Configuring camera settings..."
+    sh ./camsetup.sh
+    if [ $? -eq 0 ]; then
+        echo "Camera configuration completed successfully"
+    else
+        echo "Warning: Camera configuration failed"
+    fi
+    sleep 2  # Give camera time to apply settings
+else
+    echo "Warning: camsetup.sh not found in current directory"
+fi
+
 # --- Functions ---
 record_audio() {
     local output_file="$1"
