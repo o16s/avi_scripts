@@ -250,4 +250,55 @@ document.addEventListener('keydown', function(e) {
     </div>
 </div>
 
+
+<div class="cbi-section">
+    <h3>Anisca Vision Software Updates</h3>
+    <p>Current Version: <span id="current-version"><%=luci.sys.exec("grep AVI_SCRIPTS_VERSION /etc/avi_version.env 2>/dev/null | cut -d'=' -f2 | tr -d '\"' || echo unknown")%></span></p>
+    <button onclick="checkUpdates()" id="check-btn">Check for Updates</button>
+    <div id="update-info" style="display:none; margin-top:10px; padding:10px; background:#f0f8ff;">
+        <p><strong>Update available!</strong></p>
+        <p>Current: <span id="current-ver"></span> → Latest: <span id="latest-ver"></span></p>
+        <p>Run via SSH:</p>
+        <code>curl -fsSL "https://install.anisca.io?$(date +%s)" | sh</code>
+    </div>
+    <div id="up-to-date" style="display:none; color:green;">✅ Latest version installed</div>
+</div>
+
+<script>
+function checkUpdates() {
+    const btn = document.getElementById('check-btn');
+    const current = document.getElementById('current-version').textContent.trim();
+    
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+    
+    // Hide previous results
+    document.getElementById('update-info').style.display = 'none';
+    document.getElementById('up-to-date').style.display = 'none';
+    
+    fetch('https://api.github.com/repos/o16s/avi_scripts/releases/latest')
+        .then(r => r.json())
+        .then(data => {
+            const latest = data.tag_name.trim();
+            
+            // Debug: log the actual values
+            console.log('Current:', JSON.stringify(current));
+            console.log('Latest:', JSON.stringify(latest));
+            console.log('Equal?', latest === current);
+            
+            if (latest === current) {
+                document.getElementById('up-to-date').style.display = 'block';
+            } else {
+                document.getElementById('current-ver').textContent = current;
+                document.getElementById('latest-ver').textContent = latest;
+                document.getElementById('update-info').style.display = 'block';
+            }
+        })
+        .catch(() => alert('Failed to check updates'))
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = 'Check for Updates';
+        });
+}
+</script>
 <%+footer%>
