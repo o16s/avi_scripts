@@ -266,12 +266,6 @@ fi
 
 # Get commit hash using git ls-remote (more reliable than API)
 COMMIT_HASH=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/git/refs/heads/main" 2>/dev/null | grep -o '"sha":"[^"]*"' | cut -d'"' -f4 | cut -c1-7 2>/dev/null || echo "unknown")
-
-# Alternative method if API fails
-if [ "$COMMIT_HASH" = "unknown" ] || [ -z "$COMMIT_HASH" ]; then
-    COMMIT_HASH=$(git ls-remote https://github.com/o16s/avi_scripts.git HEAD 2>/dev/null | cut -c1-7 || echo "unknown")
-fi
-
 UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 # Create version information file
