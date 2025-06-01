@@ -278,12 +278,18 @@ VERSION=$(git describe --tags --always 2>/dev/null || echo "unknown")
 COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
+# Update version information - get from GitHub API
+echo "Getting version information..."
+VERSION=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "main")
+COMMIT_HASH=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/commits/main" 2>/dev/null | grep '"sha":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/' | cut -c1-7 || echo "unknown")
+UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
 # Create or update version env vars
-cat >> /etc/avi_version.env << EOL
+cat > /etc/avi_version.env << EOL
 AVI_SCRIPTS_VERSION="${VERSION}"
 AVI_SCRIPTS_UPDATED="${UPDATE_DATE}"
 AVI_SCRIPTS_COMMIT="${COMMIT_HASH}"
-AVI_SCRIPTS_MANUAL_URL="https://octanis.github.io/avi_scripts/"
+AVI_SCRIPTS_MANUAL_URL="https://o16s.github.io/avi_scripts/"
 EOL
 
 echo "AVI Scripts updated to version: ${VERSION}"
