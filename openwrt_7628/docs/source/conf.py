@@ -10,23 +10,18 @@ exclude_patterns = []
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
-# PDF output
-latex_engine = 'xelatex'  # Changed from pdflatex to xelatex for better Unicode support
+# PDF output - SIMPLIFIED FOR COMPATIBILITY
+latex_engine = 'pdflatex'
 latex_elements = {
     'papersize': 'a4paper',
     'pointsize': '11pt',
     'preamble': r'''
-\usepackage{fontspec}
-\usepackage{xunicode}
-\usepackage{xltxtra}
-\defaultfontfeatures{Ligatures=TeX}
-\setmainfont{DejaVu Sans}
-\setsansfont{DejaVu Sans}
-\setmonofont{DejaVu Sans Mono}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\DeclareUnicodeCharacter{2699}{\textbf{[GEAR]}}
+\DeclareUnicodeCharacter{1F5C4}{\textbf{[FOLDER]}}
+\DeclareUnicodeCharacter{1F512}{\textbf{[LOCK]}}
 ''',
-    'babel': '',
-    'inputenc': '',
-    'utf8extra': '',
 }
 
 latex_documents = [

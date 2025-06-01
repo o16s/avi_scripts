@@ -137,7 +137,6 @@ if [ -d "./openwrt_7628/root" ]; then
     done
 fi
 
-
 # Step 9a: Install logo and header template
 echo "Installing logo and custom header..."
 
@@ -248,7 +247,45 @@ echo "Clearing LuCI cache and restarting web server..."
 rm -rf /tmp/luci-*
 /etc/init.d/uhttpd restart
 
-# Step 13: Cleanup
+# Step 13: Update version information with improved parsing
+echo "Getting version information..."
+
+# Get latest release info with better JSON parsing
+RELEASE_JSON=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/releases/latest" 2>/dev/null || echo "")
+
+if [ -n "$RELEASE_JSON" ]; then
+    # Parse version using multiple methods for reliability
+    VERSION=$(echo "$RELEASE_JSON" | grep -o '"tag_name":"[^"]*"' | cut -d'"' -f4)
+    if [ -z "$VERSION" ]; then
+        VERSION=$(echo "$RELEASE_JSON" | sed -n 's/.*"tag_name":"\([^"]*\)".*/\1/p')
+    fi
+    if [ -z "$VERSION" ]; then
+        VERSION="main"
+    fi
+else
+    VERSION="main"
+fi
+
+# Get commit hash using git ls-remote (more reliable than API)
+COMMIT_HASH=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/git/refs/heads/main" 2>/dev/null | grep -o '"sha":"[^"]*"' | cut -d'"' -f4 | cut -c1-7 2>/dev/null || echo "unknown")
+
+# Alternative method if API fails - try git ls-remote
+if [ "$COMMIT_HASH" = "unknown" ] || [ -z "$COMMIT_HASH" ]; then
+    # This requires git command, but fallback gracefully
+    COMMIT_HASH=$(git ls-remote https://github.com/o16s/avi_scripts.git HEAD 2>/dev/null | cut -c1-7 || echo "unknown")
+fi
+
+UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Create or update version env vars
+cat > /etc/avi_version.env << EOL
+AVI_SCRIPTS_VERSION="${VERSION}"
+AVI_SCRIPTS_UPDATED="${UPDATE_DATE}"
+AVI_SCRIPTS_COMMIT="${COMMIT_HASH}"
+AVI_SCRIPTS_MANUAL_URL="https://o16s.github.io/avi_scripts/"
+EOL
+
+# Step 14: Cleanup
 cd /
 rm -rf /tmp/avi_scripts_temp /tmp/install.tar.gz
 
@@ -262,6 +299,11 @@ echo "  - Init scripts updated/added in /etc/init.d/"
 echo "  - LuCI Camera module updated/installed"
 echo "  - Services restarted with new configurations"
 echo ""
+echo "📦 Version Information:"
+echo "  - AVI Scripts Version: ${VERSION}"
+echo "  - Commit: ${COMMIT_HASH}"
+echo "  - Updated: ${UPDATE_DATE}"
+echo ""
 echo "🔍 To verify installation:"
 echo "1. Check scripts: ls -la /bin/*.sh"
 echo "2. Verify crontab: cat /etc/crontabs/root"
@@ -271,27 +313,3 @@ echo "5. Access LuCI camera: Services → Camera"
 echo ""
 echo "📝 If you need to modify environment variables:"
 echo "   vi /root/.env"
-
-
-# Update version information
-VERSION=$(git describe --tags --always 2>/dev/null || echo "unknown")
-COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S')
-
-# Update version information - get from GitHub API
-echo "Getting version information..."
-VERSION=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "main")
-COMMIT_HASH=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/commits/main" 2>/dev/null | grep '"sha":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/' | cut -c1-7 || echo "unknown")
-UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S')
-
-# Create or update version env vars
-cat > /etc/avi_version.env << EOL
-AVI_SCRIPTS_VERSION="${VERSION}"
-AVI_SCRIPTS_UPDATED="${UPDATE_DATE}"
-AVI_SCRIPTS_COMMIT="${COMMIT_HASH}"
-AVI_SCRIPTS_MANUAL_URL="https://o16s.github.io/avi_scripts/"
-EOL
-
-echo "AVI Scripts updated to version: ${VERSION}"
-echo "Commit: ${COMMIT_HASH}"
-echo "Updated: ${UPDATE_DATE}"

@@ -23,7 +23,7 @@ jobs:
     - name: Install LaTeX
       run: |
         sudo apt-get update
-        sudo apt-get install -y texlive-xetex texlive-fonts-recommended texlive-latex-extra latexmk fonts-dejavu
+        sudo apt-get install -y texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra latexmk
         
     - name: Install Python dependencies
       run: |
@@ -34,6 +34,11 @@ jobs:
       run: |
         cd openwrt_7628/docs
         make html
+        
+    - name: Build PDF documentation
+      run: |
+        cd openwrt_7628/docs
+        make pdf
         
     - name: Upload documentation to release
       uses: softprops/action-gh-release@v1
@@ -50,9 +55,3 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: openwrt_7628/docs/build/html
-    
-    - name: Build PDF documentation
-      run: |
-        cd openwrt_7628/docs
-        make pdf
-        
