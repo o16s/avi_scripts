@@ -31,6 +31,7 @@ The Anisca Vision OpenWRT Camera is a specialized, local first, surveillance dev
 * **Extracts simple local analytics** like motion in a ROI and color/brightness metrics
 
 More use cases are possible after setup of the optional cloud connection:
+
 * **AI Data Analytics** from uploaded images including:
   
   - People counting and occupancy monitoring

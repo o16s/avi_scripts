@@ -18,6 +18,6 @@ latex_elements = {
 }
 
 latex_documents = [
-    ('index', 'anisca-camera-manual.tex', 'Anisca Vision OpenWRT Camera User Manual',
+    ('index', 'anisca-vision-openwrt-camera.tex', 'Anisca Vision OpenWRT Camera User Manual',
      'Octanis', 'manual'),
 ]
