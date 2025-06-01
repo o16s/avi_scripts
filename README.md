@@ -1,13 +1,53 @@
-On an anisca vision AVI-1-1, run this command 
+# Anisca Vision Camera Scripts
 
-´curl -H "Cache-Control: no-cache" -H "Pragma: no-cache" -fsSL "https://install.anisca.io" | sh`
+![AVI Logo](openwrt_7628/docs/source/_static/avi_logo_w.png)
 
-- Audio capture must be manually enabled via env var and by /etc/init.d/audio-capture enable
+Software suite for the **Anisca Vision AVI-1-1** OpenWRT camera system.
+
+![AVI-1-1 Camera](openwrt_7628/docs/source/_static/f51c.png)
+
+## Quick Start
+
+Run this command on your AVI-1-1 camera:
+
+```bash
 curl -fsSL "https://install.anisca.io?$(date +%s)" | sh
+```
 
+Alternative (uncached):
+```bash
+curl -fsSL "https://raw.githubusercontent.com/o16s/avi_scripts/main/install.sh" | sh
+```
 
-- luci cache:
+## Features
+
+- **Automated Azure Blob Storage uploads** with configurable intervals
+- **Live video streaming** via web interface
+- **Privacy polygon masking** for sensitive areas  
+- **LuCI web interface integration** with camera controls
+- **Local analytics** including motion detection and brightness metrics
+
+## Documentation
+
+📖 **[Complete User Manual](https://o16s.github.io/avi_scripts/)**
+
+## Troubleshooting
+
+**LuCI camera page not appearing:**
+```bash
 rm -rf /tmp/luci-*
 /etc/init.d/uhttpd restart
-logout from luci + log back in
-- services page will not appear if there are multiple registrations that conflict! (2 similare lua files)
+```
+Then logout and log back into LuCI.
+
+**Audio capture:** Must be manually enabled via environment variables and service:
+```bash
+/etc/init.d/audio-capture enable
+```
+
+> **Note:** Services page conflicts can occur with duplicate lua controller files.
+
+## Support
+
+- Email: support@octanis.ch
+- Website: https://www.octanis.ch/anisca-vision-openwrt-camera
