@@ -11,10 +11,22 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 # PDF output
-latex_engine = 'pdflatex'
+latex_engine = 'xelatex'  # Changed from pdflatex to xelatex for better Unicode support
 latex_elements = {
     'papersize': 'a4paper',
     'pointsize': '11pt',
+    'preamble': r'''
+\usepackage{fontspec}
+\usepackage{xunicode}
+\usepackage{xltxtra}
+\defaultfontfeatures{Ligatures=TeX}
+\setmainfont{DejaVu Sans}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}
+''',
+    'babel': '',
+    'inputenc': '',
+    'utf8extra': '',
 }
 
 latex_documents = [
