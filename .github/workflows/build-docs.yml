@@ -1,0 +1,57 @@
+name: Build Documentation
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install LaTeX
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
+        
+    - name: Install Python dependencies
+      run: |
+        cd openwrt_7628/docs
+        pip install -r requirements.txt
+        
+    - name: Build HTML documentation
+      run: |
+        cd openwrt_7628/docs
+        make html
+        
+    - name: Build PDF documentation
+      run: |
+        cd openwrt_7628/docs
+        make pdf
+        
+    - name: Upload documentation to release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          openwrt_7628/docs/build/latex/anisca-camera-manual.pdf
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Deploy HTML docs to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: openwrt_7628/docs/build/html

@@ -137,7 +137,42 @@ if [ -d "./openwrt_7628/root" ]; then
     done
 fi
 
-# Step 9: Install/Update LuCI Camera Module
+
+# Step 9a: Install logo and header template
+echo "Installing logo and custom header..."
+
+# Create static directory for logo
+mkdir -p /www/luci-static
+
+# Copy logo file if it exists
+if [ -f "./openwrt_7628/docs/source/_static/avi_logo_w.png" ]; then
+    echo "📷 Installing AVI logo..."
+    cp -v "./openwrt_7628/docs/source/_static/avi_logo_w.png" "/www/luci-static/avi_logo_w.png"
+    chmod 644 "/www/luci-static/avi_logo_w.png"
+    echo "✅ Logo installed at /www/luci-static/avi_logo_w.png"
+else
+    echo "⚠️ Logo file not found: ./openwrt_7628/docs/source/_static/avi_logo_w.png"
+fi
+
+# Install custom header template
+if [ -f "./openwrt_7628/usr/lib/lua/luci/view/themes/bootstrap-dark/header.htm" ]; then
+    echo "🎨 Installing custom LuCI header..."
+    
+    # Backup original header if not already backed up
+    if [ -f "/usr/lib/lua/luci/view/themes/bootstrap-dark/header.htm" ] && [ ! -f "/usr/lib/lua/luci/view/themes/bootstrap-dark/header.htm.original" ]; then
+        cp "/usr/lib/lua/luci/view/themes/bootstrap-dark/header.htm" "/usr/lib/lua/luci/view/themes/bootstrap-dark/header.htm.original"
+        echo "🔄 Backed up original header"
+    fi
+    
+    # Copy new header
+    cp -v "./openwrt_7628/usr/lib/lua/luci/view/themes/bootstrap-dark/header.htm" "/usr/lib/lua/luci/view/themes/bootstrap-dark/header.htm"
+    chmod 644 "/usr/lib/lua/luci/view/themes/bootstrap-dark/header.htm"
+    echo "✅ Custom header installed"
+else
+    echo "⚠️ Custom header file not found: ./openwrt_7628/usr/lib/lua/luci/view/themes/bootstrap-dark/header.htm"
+fi
+
+# Step 9b: Install/Update LuCI Camera Module
 echo "Installing/updating LuCI Camera module..."
 
 # Create LuCI module directories
@@ -236,3 +271,21 @@ echo "5. Access LuCI camera: Services → Camera"
 echo ""
 echo "📝 If you need to modify environment variables:"
 echo "   vi /root/.env"
+
+
+# Update version information
+VERSION=$(git describe --tags --always 2>/dev/null || echo "unknown")
+COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Create or update version env vars
+cat >> /etc/avi_version.env << EOL
+AVI_SCRIPTS_VERSION="${VERSION}"
+AVI_SCRIPTS_UPDATED="${UPDATE_DATE}"
+AVI_SCRIPTS_COMMIT="${COMMIT_HASH}"
+AVI_SCRIPTS_MANUAL_URL="https://octanis.github.io/avi_scripts/"
+EOL
+
+echo "AVI Scripts updated to version: ${VERSION}"
+echo "Commit: ${COMMIT_HASH}"
+echo "Updated: ${UPDATE_DATE}"
