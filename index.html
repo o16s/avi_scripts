@@ -1,0 +1,891 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anisca Vision OpenWRT Camera User Manual &mdash; Anisca Vision OpenWRT Camera 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Anisca Vision OpenWRT Camera
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Anisca Vision OpenWRT Camera User Manual</a></li>
+<li><a class="reference internal" href="#intended-use">Intended Use</a><ul>
+<li><a class="reference internal" href="#primary-applications">Primary Applications</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quick-start">Quick Start</a><ul>
+<li><a class="reference internal" href="#what-you-need">What You Need</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#accessing-the-camera-web-interface">Accessing the Camera Web Interface</a><ul>
+<li><a class="reference internal" href="#changing-the-default-password">Changing the Default Password</a><ul>
+<li><a class="reference internal" href="#method-1-with-dhcp-recommended">Method 1 - With DHCP (Recommended)</a></li>
+<li><a class="reference internal" href="#method-2-without-dhcp-direct-connection">Method 2 - Without DHCP (Direct Connection)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#multiple-camera-warning">Multiple Camera Warning</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#live-view">Live View</a><ul>
+<li><a class="reference internal" href="#viewing-the-live-feed">Viewing the Live Feed</a></li>
+<li><a class="reference internal" href="#stream-information">Stream Information</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#camera-configuration">Camera Configuration</a><ul>
+<li><a class="reference internal" href="#upload-settings">Upload Settings</a></li>
+<li><a class="reference internal" href="#camera-controls">Camera Controls</a><ul>
+<li><a class="reference internal" href="#additional-controls">Additional Controls</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#azure-storage-configuration">Azure Storage Configuration</a><ul>
+<li><a class="reference internal" href="#required-information">Required Information</a></li>
+<li><a class="reference internal" href="#setup-steps">Setup Steps</a></li>
+<li><a class="reference internal" href="#getting-azure-sas-token">Getting Azure SAS Token</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#s3-storage-configuration">S3 Storage Configuration</a></li>
+<li><a class="reference internal" href="#privacy-polygon-configuration">Privacy Polygon Configuration</a><ul>
+<li><a class="reference internal" href="#step-by-step-setup">Step-by-Step Setup</a><ul>
+<li><a class="reference internal" href="#install-camera-in-final-position">Install Camera in Final Position</a></li>
+<li><a class="reference internal" href="#capture-reference-image">Capture Reference Image</a></li>
+<li><a class="reference internal" href="#create-polygon-coordinates">Create Polygon Coordinates</a></li>
+<li><a class="reference internal" href="#copy-coordinates-to-camera">Copy Coordinates to Camera</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#example-usage">Example Usage</a></li>
+<li><a class="reference internal" href="#tips-and-notes">Tips and Notes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#additional-settings">Additional Settings</a><ul>
+<li><a class="reference internal" href="#customer-and-camera-information">Customer and Camera Information</a></li>
+<li><a class="reference internal" href="#audio-settings">Audio Settings</a></li>
+<li><a class="reference internal" href="#monitoring">Monitoring</a></li>
+<li><a class="reference internal" href="#version-information">Version Information</a></li>
+<li><a class="reference internal" href="#user-manual-access">User Manual Access</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#software-updates">Software Updates</a><ul>
+<li><a class="reference internal" href="#openwrt-firmware-update">OpenWRT Firmware Update</a><ul>
+<li><a class="reference internal" href="#download-latest-firmware">Download Latest Firmware</a></li>
+<li><a class="reference internal" href="#access-flash-firmware-interface">Access Flash Firmware Interface</a></li>
+<li><a class="reference internal" href="#upload-and-verify-firmware">Upload and Verify Firmware</a></li>
+<li><a class="reference internal" href="#flash-firmware">Flash Firmware</a></li>
+<li><a class="reference internal" href="#update-camera-scripts">Update Camera Scripts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#avi-scripts-update">AVI Scripts Update</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#security">Security</a><ul>
+<li><a class="reference internal" href="#defense-in-depth-security">Defense in Depth Security</a></li>
+<li><a class="reference internal" href="#password-security">Password Security</a><ul>
+<li><a class="reference internal" href="#change-default-password-immediately">Change Default Password Immediately</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#network-access-control">Network Access Control</a><ul>
+<li><a class="reference internal" href="#block-all-internet-access-except-azure">Block All Internet Access Except Azure</a></li>
+<li><a class="reference internal" href="#router-firewall-configuration">Router/Firewall Configuration</a></li>
+<li><a class="reference internal" href="#network-segmentation">Network Segmentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#additional-security-measures">Additional Security Measures</a></li>
+<li><a class="reference internal" href="#why-these-measures-matter">Why These Measures Matter</a><ul>
+<li><a class="reference internal" href="#password-protection">Password Protection</a></li>
+<li><a class="reference internal" href="#network-restrictions">Network Restrictions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#technical-specifications">Technical Specifications</a><ul>
+<li><a class="reference internal" href="#system-specifications">System Specifications</a></li>
+<li><a class="reference internal" href="#camera-variants">Camera Variants</a></li>
+<li><a class="reference internal" href="#common-features">Common Features</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#web-interface-access-issues">Web Interface Access Issues</a><ul>
+<li><a class="reference internal" href="#cannot-access-web-interface">Cannot Access Web Interface</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#video-stream-issues">Video Stream Issues</a><ul>
+<li><a class="reference internal" href="#no-live-video-stream">No Live Video Stream</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#azure-upload-issues">Azure Upload Issues</a><ul>
+<li><a class="reference internal" href="#azure-upload-not-working">Azure Upload Not Working</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#image-quality-issues">Image Quality Issues</a><ul>
+<li><a class="reference internal" href="#poor-image-quality">Poor Image Quality</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#network-configuration-issues">Network Configuration Issues</a><ul>
+<li><a class="reference internal" href="#multiple-cameras-on-same-network">Multiple Cameras on Same Network</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#factory-reset">Factory Reset</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#support-warranty">Support &amp; Warranty</a><ul>
+<li><a class="reference internal" href="#technical-support">Technical Support</a></li>
+<li><a class="reference internal" href="#warranty-information">Warranty Information</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Anisca Vision OpenWRT Camera</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Anisca Vision OpenWRT Camera User Manual</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="anisca-vision-openwrt-camera-user-manual">
+<h1>Anisca Vision OpenWRT Camera User Manual<a class="headerlink" href="#anisca-vision-openwrt-camera-user-manual" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+<section id="intended-use">
+<h1>Intended Use<a class="headerlink" href="#intended-use" title="Link to this heading"></a></h1>
+<p>The Anisca Vision OpenWRT Camera is a specialized, local first, surveillance device designed for automated monitoring and analytics. The camera:</p>
+<ul class="simple">
+<li><p><strong>Automatically captures and uploads</strong> snapshots to Microsoft Azure Blob Storage at configurable intervals</p></li>
+<li><p><strong>Provides real-time monitoring</strong> via web interface live view</p></li>
+<li><p><strong>Operates autonomously</strong> once configured - no manual intervention required</p></li>
+<li><p><strong>Extracts simple local analytics</strong> like motion in a ROI and color/brightness metrics</p></li>
+</ul>
+<p>More use cases are possible after setup of the optional cloud connection:</p>
+<ul class="simple">
+<li><p><strong>AI Data Analytics</strong> from uploaded images including:</p>
+<ul>
+<li><p>People counting and occupancy monitoring</p></li>
+<li><p>Brightness and lighting condition analysis</p></li>
+<li><p>Change detection and motion analysis</p></li>
+<li><p>Environmental monitoring</p></li>
+</ul>
+</li>
+<li><p><strong>Timelapses</strong> from continuous image sequences</p></li>
+</ul>
+<section id="primary-applications">
+<h2>Primary Applications<a class="headerlink" href="#primary-applications" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Retail analytics (customer counting, dwell time)</p></li>
+<li><p>Office occupancy monitoring</p></li>
+<li><p>Construction site progress documentation</p></li>
+<li><p>Environmental monitoring (weather, lighting changes)</p></li>
+<li><p>Security and surveillance with historical data</p></li>
+<li><p>Traffic and pedestrian flow analysis</p></li>
+</ul>
+<p>The camera is designed as a “set and forget” solution - configure once, then let it continuously collect visual data for your analytics needs.</p>
+</section>
+</section>
+<section id="quick-start">
+<h1>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h1>
+<section id="what-you-need">
+<h2>What You Need<a class="headerlink" href="#what-you-need" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>PoE switch supporting up to 13W per port (or 5V USB power for WiFi only models)</p></li>
+<li><p>Ethernet cable with supplied rubber grommet (PoE models)</p></li>
+<li><p>Microsoft Azure account with Blob Storage</p></li>
+</ul>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Connect camera to PoE switch using supplied ethernet cable (or USB power for WiFi models)</p></li>
+<li><p><strong>Important:</strong> Use the rubber grommet to protect ethernet connection from moisture (PoE models)</p></li>
+<li><p>Camera will automatically get IP address via DHCP</p></li>
+<li><p>Hostname will be the camera’s serial number (e.g., <code class="docutils literal notranslate"><span class="pre">e438191ae89e</span></code>)</p></li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Always use the supplied rubber grommet for moisture protection, especially outdoors.</p>
+</div>
+</section>
+</section>
+<section id="accessing-the-camera-web-interface">
+<h1>Accessing the Camera Web Interface<a class="headerlink" href="#accessing-the-camera-web-interface" title="Link to this heading"></a></h1>
+<section id="changing-the-default-password">
+<h2>Changing the Default Password<a class="headerlink" href="#changing-the-default-password" title="Link to this heading"></a></h2>
+<section id="method-1-with-dhcp-recommended">
+<h3>Method 1 - With DHCP (Recommended)<a class="headerlink" href="#method-1-with-dhcp-recommended" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Check your router’s web interface for connected devices</p></li>
+<li><p>Look for device with hostname matching camera serial number (e.g., <code class="docutils literal notranslate"><span class="pre">e438191ae89e</span></code>)</p></li>
+<li><p>Open web browser and navigate to that IP address</p></li>
+<li><p>Login with username <code class="docutils literal notranslate"><span class="pre">root</span></code> and default password <code class="docutils literal notranslate"><span class="pre">e438191ae89e</span></code>.</p></li>
+<li><p>Change the password under  <strong>System</strong> → <strong>Administration</strong> in the top menu.</p></li>
+</ol>
+</section>
+<section id="method-2-without-dhcp-direct-connection">
+<h3>Method 2 - Without DHCP (Direct Connection)<a class="headerlink" href="#method-2-without-dhcp-direct-connection" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Set your computer IP to <code class="docutils literal notranslate"><span class="pre">192.168.123.251</span></code></p></li>
+<li><p>Set subnet mask to <code class="docutils literal notranslate"><span class="pre">255.255.255.0</span></code></p></li>
+<li><p>Leave gateway and DNS empty</p></li>
+<li><p>Navigate to <code class="docutils literal notranslate"><span class="pre">192.168.123.250</span></code> in web browser</p></li>
+<li><p>Login with username <code class="docutils literal notranslate"><span class="pre">root</span></code> and default password <code class="docutils literal notranslate"><span class="pre">e438191ae89e</span></code>.</p></li>
+<li><p>Change the password under  <strong>System</strong> → <strong>Administration</strong> in the top menu.</p></li>
+</ol>
+</section>
+</section>
+<section id="multiple-camera-warning">
+<h2>Multiple Camera Warning<a class="headerlink" href="#multiple-camera-warning" title="Link to this heading"></a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p><strong>Multiple Camera Warning:</strong> ALL cameras use the same default IP address <code class="docutils literal notranslate"><span class="pre">192.168.123.250</span></code>. If you have multiple cameras on the same network:</p>
+<ul class="simple">
+<li><p><strong>Option 1:</strong> Use DHCP (recommended) - each camera gets unique IP automatically</p></li>
+<li><p><strong>Option 2:</strong> Configure manually by turning cameras on <strong>one at a time</strong>, setting unique static IPs for each</p></li>
+</ul>
+<p>Never power on multiple unconfigured cameras simultaneously on the same network!</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The camera runs OpenWRT (Version 22+) firmware with LuCI web interface and customised camera software. It is straightforward to install your own software and scripts via SSH using the command <code class="docutils literal notranslate"><span class="pre">opkg</span> <span class="pre">install</span></code>.</p>
+</div>
+</section>
+</section>
+<section id="live-view">
+<h1>Live View<a class="headerlink" href="#live-view" title="Link to this heading"></a></h1>
+<section id="viewing-the-live-feed">
+<h2>Viewing the Live Feed<a class="headerlink" href="#viewing-the-live-feed" title="Link to this heading"></a></h2>
+<p>To view the camera’s live feed:</p>
+<ol class="arabic simple">
+<li><p>Open camera web interface in your browser</p></li>
+<li><p>Click <strong>Services</strong> → <strong>Camera</strong> in the top menu</p></li>
+<li><p>Live video stream will display automatically</p></li>
+<li><p>Use this to verify camera positioning and image quality</p></li>
+</ol>
+</section>
+<section id="stream-information">
+<h2>Stream Information<a class="headerlink" href="#stream-information" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Live stream URL: <code class="docutils literal notranslate"><span class="pre">http://camera-ip:8080/?action=stream</span></code></p></li>
+<li><p>Snapshot URL: <code class="docutils literal notranslate"><span class="pre">http://camera-ip:8080/?action=snapshot</span></code></p></li>
+<li><p>Stream runs on port 8080</p></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use Chrome or Firefox browsers for best compatibility.</p>
+</div>
+</section>
+</section>
+<section id="camera-configuration">
+<h1>Camera Configuration<a class="headerlink" href="#camera-configuration" title="Link to this heading"></a></h1>
+<p>Access camera settings via <strong>Services</strong> → <strong>Camera</strong> → <strong>⚙️ Camera Settings</strong></p>
+<section id="upload-settings">
+<h2>Upload Settings<a class="headerlink" href="#upload-settings" title="Link to this heading"></a></h2>
+<p><strong>Upload Interval:</strong> Configure how often images are uploaded (5-3600 seconds)</p>
+<ul class="simple">
+<li><p>Default: 60 seconds</p></li>
+<li><p>Quick presets: 10s, 30s, 1min, 5min, 10min</p></li>
+<li><p>Lower intervals = more frequent uploads = higher bandwidth usage</p></li>
+</ul>
+</section>
+<section id="camera-controls">
+<h2>Camera Controls<a class="headerlink" href="#camera-controls" title="Link to this heading"></a></h2>
+<p>The camera provides extensive image quality controls:</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Camera Hardware Controls</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Setting</p></th>
+<th class="head"><p>Range</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Brightness</p></td>
+<td><p>-64 to 64</p></td>
+<td><p>Overall image brightness</p></td>
+</tr>
+<tr class="row-odd"><td><p>Contrast</p></td>
+<td><p>0 to 64</p></td>
+<td><p>Image contrast level</p></td>
+</tr>
+<tr class="row-even"><td><p>Saturation</p></td>
+<td><p>0 to 128</p></td>
+<td><p>Color saturation intensity</p></td>
+</tr>
+<tr class="row-odd"><td><p>Hue</p></td>
+<td><p>-40 to 40</p></td>
+<td><p>Color hue adjustment</p></td>
+</tr>
+<tr class="row-even"><td><p>Gamma</p></td>
+<td><p>72 to 500</p></td>
+<td><p>Gamma correction</p></td>
+</tr>
+<tr class="row-odd"><td><p>Gain</p></td>
+<td><p>0 to 100</p></td>
+<td><p>Image sensor gain</p></td>
+</tr>
+<tr class="row-even"><td><p>Sharpness</p></td>
+<td><p>0 to 6</p></td>
+<td><p>Image sharpness level</p></td>
+</tr>
+<tr class="row-odd"><td><p>Backlight Compensation</p></td>
+<td><p>0 to 2</p></td>
+<td><p>Compensation for backlighting</p></td>
+</tr>
+</tbody>
+</table>
+<section id="additional-controls">
+<h3>Additional Controls<a class="headerlink" href="#additional-controls" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Auto White Balance:</strong> Automatic color temperature adjustment</p></li>
+<li><p><strong>Auto Exposure Priority:</strong> Automatic exposure control</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="azure-storage-configuration">
+<h1>Azure Storage Configuration<a class="headerlink" href="#azure-storage-configuration" title="Link to this heading"></a></h1>
+<p>Configure Azure Blob Storage for automatic uploads to a container:</p>
+<section id="required-information">
+<h2>Required Information<a class="headerlink" href="#required-information" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Storage Account Name:</strong> Your Azure storage account name</p></li>
+<li><p><strong>Container Name:</strong> Target container within storage account</p></li>
+<li><p><strong>SAS Token:</strong> Shared Access Signature token with write permissions</p></li>
+</ol>
+</section>
+<section id="setup-steps">
+<h2>Setup Steps<a class="headerlink" href="#setup-steps" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>In camera web interface, go to <strong>Services</strong> → <strong>Camera</strong> → <strong>⚙️ Camera Settings</strong></p></li>
+<li><p>Scroll to <strong>🗄️ Azure Storage Settings</strong></p></li>
+<li><p>Fill in the three required fields:</p>
+<ul class="simple">
+<li><p><strong>Storage Account Name:</strong> <code class="docutils literal notranslate"><span class="pre">yourstorageaccount</span></code></p></li>
+<li><p><strong>Container Name:</strong> <code class="docutils literal notranslate"><span class="pre">your-container</span></code></p></li>
+<li><p><strong>SAS Token:</strong> <code class="docutils literal notranslate"><span class="pre">?sv=2023-01-03&amp;st=...</span></code> (include the leading <code class="docutils literal notranslate"><span class="pre">?</span></code>)</p></li>
+</ul>
+</li>
+<li><p>Save settings</p></li>
+</ol>
+</section>
+<section id="getting-azure-sas-token">
+<h2>Getting Azure SAS Token<a class="headerlink" href="#getting-azure-sas-token" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Log into Azure Portal</p></li>
+<li><p>Go to your Storage Account</p></li>
+<li><p>Navigate to <strong>Security + networking</strong> → <strong>Shared access signature</strong></p></li>
+<li><p>Configure permissions:</p>
+<ul class="simple">
+<li><p><strong>Allowed services:</strong> Blob</p></li>
+<li><p><strong>Allowed resource types:</strong> Container, Object</p></li>
+<li><p><strong>Allowed permissions:</strong> Write</p></li>
+<li><p><strong>Start/End time:</strong> Set appropriate validity period</p></li>
+</ul>
+</li>
+<li><p>Generate SAS token and copy the complete token (including <code class="docutils literal notranslate"><span class="pre">?</span></code>)</p></li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Keep your SAS token secure. Set appropriate expiration dates and minimal required permissions.</p>
+</div>
+</section>
+</section>
+<section id="s3-storage-configuration">
+<h1>S3 Storage Configuration<a class="headerlink" href="#s3-storage-configuration" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Currently S3 storage is not supported.</p>
+</div>
+</section>
+<section id="privacy-polygon-configuration">
+<h1>Privacy Polygon Configuration<a class="headerlink" href="#privacy-polygon-configuration" title="Link to this heading"></a></h1>
+<p>The privacy polygon feature allows you to blackout specific areas of the camera image for privacy protection.</p>
+<section id="step-by-step-setup">
+<h2>Step-by-Step Setup<a class="headerlink" href="#step-by-step-setup" title="Link to this heading"></a></h2>
+<section id="install-camera-in-final-position">
+<h3>Install Camera in Final Position<a class="headerlink" href="#install-camera-in-final-position" title="Link to this heading"></a></h3>
+<p>Mount the camera in its final installation location and ensure it’s properly positioned.</p>
+</section>
+<section id="capture-reference-image">
+<h3>Capture Reference Image<a class="headerlink" href="#capture-reference-image" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Open camera web interface and go to <strong>Services</strong> → <strong>Camera</strong></p></li>
+<li><p>View the live stream to see the current camera view</p></li>
+<li><p>Right-click on the live image and select <strong>“Save image as”</strong> or take a screenshot</p></li>
+<li><p>Save the image to your computer</p></li>
+</ul>
+</section>
+<section id="create-polygon-coordinates">
+<h3>Create Polygon Coordinates<a class="headerlink" href="#create-polygon-coordinates" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Open <a class="reference external" href="https://www.image-map.net/">https://www.image-map.net/</a> in your web browser</p></li>
+<li><p>Upload your saved camera image to the website</p></li>
+<li><p>Select <strong>“Polygon”</strong> tool from the toolbar</p></li>
+<li><p>Click around the area you want to blackout to create a polygon shape</p></li>
+<li><p>The website will automatically generate coordinate values</p></li>
+</ul>
+</section>
+<section id="copy-coordinates-to-camera">
+<h3>Copy Coordinates to Camera<a class="headerlink" href="#copy-coordinates-to-camera" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Copy the generated coordinates from image-map.net</p></li>
+<li><p>Return to camera web interface <strong>Services</strong> → <strong>Camera</strong> → <strong>⚙️ Camera Settings</strong></p></li>
+<li><p>Scroll to <strong>🔒 Privacy Settings</strong></p></li>
+<li><p>Paste coordinates into <strong>Privacy Polygon</strong> field</p></li>
+<li><p>Format should be: <code class="docutils literal notranslate"><span class="pre">x1,y1</span> <span class="pre">x2,y2</span> <span class="pre">x3,y3</span> <span class="pre">x4,y4</span></code></p></li>
+<li><p>Save settings</p></li>
+</ul>
+</section>
+</section>
+<section id="example-usage">
+<h2>Example Usage<a class="headerlink" href="#example-usage" title="Link to this heading"></a></h2>
+<p>If you want to blackout a rectangular area, coordinates might look like:
+<code class="docutils literal notranslate"><span class="pre">100,100</span> <span class="pre">200,100</span> <span class="pre">200,200</span> <span class="pre">100,200</span></code></p>
+</section>
+<section id="tips-and-notes">
+<h2>Tips and Notes<a class="headerlink" href="#tips-and-notes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>You can create multiple polygons by adding more coordinate pairs</p></li>
+<li><p>Test the privacy mask by viewing the live stream after saving settings</p></li>
+<li><p>Leave the field empty to disable privacy masking</p></li>
+<li><p>Coordinates are relative to the camera’s image resolution</p></li>
+</ul>
+</section>
+</section>
+<section id="additional-settings">
+<h1>Additional Settings<a class="headerlink" href="#additional-settings" title="Link to this heading"></a></h1>
+<section id="customer-and-camera-information">
+<h2>Customer and Camera Information<a class="headerlink" href="#customer-and-camera-information" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Customer Name:</strong> Identifier for your organization. This is the folder name of all the snapshots of this camera in the Azure Blob Storage container.</p></li>
+<li><p><strong>Camera Name:</strong> Unique identifier for this camera (defaults to serial number). This is the folder name of the camera and filename of the latest snapshot of this camera.</p></li>
+</ul>
+</section>
+<section id="audio-settings">
+<h2>Audio Settings<a class="headerlink" href="#audio-settings" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Enable Audio Recording:</strong> Toggle audio capture on/off</p></li>
+<li><p><strong>Audio Duration:</strong> Length of audio clips (seconds)</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Audio recording is disabled by default and may not be available on all models.</p>
+</div>
+</section>
+<section id="monitoring">
+<h2>Monitoring<a class="headerlink" href="#monitoring" title="Link to this heading"></a></h2>
+<p>If you would like your camera to ping a remote URL (like Uptime Kuma’s “push monitor”), you can set the following parameters:</p>
+<ul class="simple">
+<li><p><strong>Uptime API URL:</strong> For external monitoring services</p></li>
+<li><p><strong>Uptime Ping URL:</strong> Health check endpoint</p></li>
+</ul>
+</section>
+<section id="version-information">
+<h2>Version Information<a class="headerlink" href="#version-information" title="Link to this heading"></a></h2>
+<p>The camera settings page displays current software version information:</p>
+<ul class="simple">
+<li><p><strong>AVI Scripts Version:</strong> Current installed version</p></li>
+<li><p><strong>Last Updated:</strong> When the scripts were last updated</p></li>
+<li><p><strong>Commit Hash:</strong> Git commit hash of current installation</p></li>
+</ul>
+<p>This information is automatically updated when running the install script.</p>
+</section>
+<section id="user-manual-access">
+<h2>User Manual Access<a class="headerlink" href="#user-manual-access" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Documentation:</strong> Link to latest user manual and documentation</p></li>
+<li><p><strong>Support:</strong> Contact information and support resources</p></li>
+</ul>
+</section>
+</section>
+<section id="software-updates">
+<h1>Software Updates<a class="headerlink" href="#software-updates" title="Link to this heading"></a></h1>
+<section id="openwrt-firmware-update">
+<h2>OpenWRT Firmware Update<a class="headerlink" href="#openwrt-firmware-update" title="Link to this heading"></a></h2>
+<section id="download-latest-firmware">
+<h3>Download Latest Firmware<a class="headerlink" href="#download-latest-firmware" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Visit <a class="reference external" href="https://www.octanis.ch/anisca-vision-openwrt-camera">https://www.octanis.ch/anisca-vision-openwrt-camera</a></p></li>
+<li><p>Download the latest firmware image file (<code class="docutils literal notranslate"><span class="pre">.bin</span></code> format)</p></li>
+<li><p>Save to your computer</p></li>
+</ul>
+</section>
+<section id="access-flash-firmware-interface">
+<h3>Access Flash Firmware Interface<a class="headerlink" href="#access-flash-firmware-interface" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Open camera web interface</p></li>
+<li><p>Navigate to <strong>System</strong> → <strong>Backup / Flash Firmware</strong></p></li>
+<li><p>Click on <strong>“Flash new firmware image”</strong> section</p></li>
+</ul>
+</section>
+<section id="upload-and-verify-firmware">
+<h3>Upload and Verify Firmware<a class="headerlink" href="#upload-and-verify-firmware" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Click <strong>“Choose File”</strong> and select downloaded firmware image</p></li>
+<li><p>Click <strong>“Upload”</strong> to upload the firmware</p></li>
+<li><p>Click <strong>“Verify”</strong> to check firmware integrity</p></li>
+</ul>
+</section>
+<section id="flash-firmware">
+<h3>Flash Firmware<a class="headerlink" href="#flash-firmware" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>After successful verification, click <strong>“Proceed”</strong> to flash firmware</p></li>
+<li><p><strong>DO NOT TURN OFF THE CAMERA OR UNPLUG ETHERNET CABLE</strong></p></li>
+<li><p>Wait for the flashing process to complete (usually 2-5 minutes)</p></li>
+<li><p>Camera will automatically reboot</p></li>
+</ul>
+</section>
+<section id="update-camera-scripts">
+<h3>Update Camera Scripts<a class="headerlink" href="#update-camera-scripts" title="Link to this heading"></a></h3>
+<p>After firmware update, you need to update the camera application scripts:</p>
+<ul class="simple">
+<li><p>Connect to camera via SSH: <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">root&#64;camera-ip</span></code></p></li>
+<li><p>Run the install script: <code class="docutils literal notranslate"><span class="pre">curl</span> <span class="pre">-fsSL</span> <span class="pre">&quot;https://install.anisca.io?$(date</span> <span class="pre">+%s)&quot;</span> <span class="pre">|</span> <span class="pre">sh</span></code></p></li>
+<li><p>This updates all camera-specific software and version information</p></li>
+</ul>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p><strong>Critical Warning:</strong> Never disconnect power or ethernet during firmware update. This will permanently damage the camera requiring factory repair.</p>
+</div>
+</section>
+</section>
+<section id="avi-scripts-update">
+<h2>AVI Scripts Update<a class="headerlink" href="#avi-scripts-update" title="Link to this heading"></a></h2>
+<p>To update only the camera application scripts (without changing OpenWRT):</p>
+<ol class="arabic simple">
+<li><p>Connect to camera via SSH: <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">root&#64;camera-ip</span></code></p></li>
+<li><p>Run: <code class="docutils literal notranslate"><span class="pre">curl</span> <span class="pre">-fsSL</span> <span class="pre">&quot;https://install.anisca.io?$(date</span> <span class="pre">+%s)&quot;</span> <span class="pre">|</span> <span class="pre">sh</span></code></p></li>
+<li><p>The script will update all components and version information automatically</p></li>
+</ol>
+<p>For more information, see: <a class="reference external" href="https://github.com/o16s/avi_scripts">https://github.com/o16s/avi_scripts</a></p>
+</section>
+</section>
+<section id="security">
+<h1>Security<a class="headerlink" href="#security" title="Link to this heading"></a></h1>
+<section id="defense-in-depth-security">
+<h2>Defense in Depth Security<a class="headerlink" href="#defense-in-depth-security" title="Link to this heading"></a></h2>
+<p>To ensure secure operation of your camera, implement these essential security measures:</p>
+</section>
+<section id="password-security">
+<h2>Password Security<a class="headerlink" href="#password-security" title="Link to this heading"></a></h2>
+<section id="change-default-password-immediately">
+<h3>Change Default Password Immediately<a class="headerlink" href="#change-default-password-immediately" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Navigate to <strong>System</strong> → <strong>Administration</strong> in the web interface</p></li>
+<li><p>Change the default password to a strong, unique password</p></li>
+<li><p>Use at least 12 characters with mix of letters, numbers, and symbols</p></li>
+<li><p>Save the new password securely</p></li>
+</ol>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>Never leave the camera with default credentials. This is a critical security vulnerability.</p>
+</div>
+</section>
+</section>
+<section id="network-access-control">
+<h2>Network Access Control<a class="headerlink" href="#network-access-control" title="Link to this heading"></a></h2>
+<section id="block-all-internet-access-except-azure">
+<h3>Block All Internet Access Except Azure<a class="headerlink" href="#block-all-internet-access-except-azure" title="Link to this heading"></a></h3>
+<p>The camera should only communicate with Microsoft Azure services, if the cloud connectivity is desired. Configure your firewall/router to:</p>
+<p><strong>Only allow outbound connections to:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">*.blob.core.windows.net</span></code> (Azure Blob Storage)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*.core.windows.net</span></code> (Azure endpoints)</p></li>
+<li><p>Port 443 (HTTPS) for secure uploads</p></li>
+</ul>
+</section>
+<section id="router-firewall-configuration">
+<h3>Router/Firewall Configuration<a class="headerlink" href="#router-firewall-configuration" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Create a dedicated VLAN for IoT devices including the camera</p></li>
+<li><p>Apply strict egress filtering allowing only Azure domains</p></li>
+<li><p>Block all other outbound internet traffic from camera IP</p></li>
+</ol>
+<p><strong>Example firewall rules:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Allow Azure Blob Storage</span>
+<span class="n">ALLOW</span> <span class="n">camera_ip</span> <span class="o">-&gt;</span> <span class="o">*.</span><span class="n">blob</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">windows</span><span class="o">.</span><span class="n">net</span><span class="p">:</span><span class="mi">443</span>
+<span class="n">ALLOW</span> <span class="n">camera_ip</span> <span class="o">-&gt;</span> <span class="o">*.</span><span class="n">core</span><span class="o">.</span><span class="n">windows</span><span class="o">.</span><span class="n">net</span><span class="p">:</span><span class="mi">443</span>
+
+<span class="c1"># Block all other internet access</span>
+<span class="n">DENY</span> <span class="n">camera_ip</span> <span class="o">-&gt;</span> <span class="o">*</span> <span class="p">(</span><span class="n">internet</span><span class="p">)</span>
+
+<span class="c1"># Allow local network access for management</span>
+<span class="n">ALLOW</span> <span class="n">local_network</span> <span class="o">-&gt;</span> <span class="n">camera_ip</span><span class="p">:</span><span class="mi">80</span>
+</pre></div>
+</div>
+</section>
+<section id="network-segmentation">
+<h3>Network Segmentation<a class="headerlink" href="#network-segmentation" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Place camera on isolated network segment</p></li>
+<li><p>Restrict access to management interface to specific admin IPs</p></li>
+<li><p>Monitor network traffic for unexpected connections</p></li>
+</ul>
+</section>
+</section>
+<section id="additional-security-measures">
+<h2>Additional Security Measures<a class="headerlink" href="#additional-security-measures" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Regular Updates:</strong> Keep firmware updated via <strong>System</strong> → <strong>Software</strong></p></li>
+<li><p><strong>Access Logging:</strong> Monitor who accesses the camera web interface</p></li>
+<li><p><strong>Physical Security:</strong> Secure camera mounting location</p></li>
+<li><p><strong>Backup Configuration:</strong> Save camera settings after configuration</p></li>
+</ol>
+</section>
+<section id="why-these-measures-matter">
+<h2>Why These Measures Matter<a class="headerlink" href="#why-these-measures-matter" title="Link to this heading"></a></h2>
+<section id="password-protection">
+<h3>Password Protection<a class="headerlink" href="#password-protection" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Prevents unauthorized access to camera controls</p></li>
+<li><p>Stops malicious configuration changes</p></li>
+<li><p>Protects your Azure credentials stored in the device</p></li>
+</ul>
+</section>
+<section id="network-restrictions">
+<h3>Network Restrictions<a class="headerlink" href="#network-restrictions" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Prevents camera from being used in botnet attacks</p></li>
+<li><p>Blocks data exfiltration to unauthorized services</p></li>
+<li><p>Reduces attack surface by limiting accessible services</p></li>
+<li><p>Ensures data only goes to your intended Azure storage</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="technical-specifications">
+<h1>Technical Specifications<a class="headerlink" href="#technical-specifications" title="Link to this heading"></a></h1>
+<section id="system-specifications">
+<h2>System Specifications<a class="headerlink" href="#system-specifications" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Model</p></td>
+<td><p>AVI-1-1</p></td>
+</tr>
+<tr class="row-even"><td><p>Architecture</p></td>
+<td><p>MediaTek MT7628AN</p></td>
+</tr>
+<tr class="row-odd"><td><p>CPU</p></td>
+<td><p>ramips/mt76x8</p></td>
+</tr>
+<tr class="row-even"><td><p>Firmware</p></td>
+<td><p>OpenWrt 22+</p></td>
+</tr>
+<tr class="row-odd"><td><p>Power Consumption</p></td>
+<td><p>14.0W</p></td>
+</tr>
+<tr class="row-even"><td><p>Network Interface</p></td>
+<td><p>PoE variant: 100Mb Ethernet / WiFi variant: 802.11bgn WiFi</p></td>
+</tr>
+<tr class="row-odd"><td><p>Operating Temperature</p></td>
+<td><p>0°C to 50°C</p></td>
+</tr>
+<tr class="row-even"><td><p>Upload Interval</p></td>
+<td><p>5-3600 seconds (configurable)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="camera-variants">
+<h2>Camera Variants<a class="headerlink" href="#camera-variants" title="Link to this heading"></a></h2>
+</section>
+<section id="common-features">
+<h2>Common Features<a class="headerlink" href="#common-features" title="Link to this heading"></a></h2>
+<p><strong>Both models feature:</strong></p>
+<ul class="simple">
+<li><p>120° wide-angle lens for broad coverage</p></li>
+<li><p>PoE power (IEEE 802.3at) or 5V USB</p></li>
+<li><p>Configurable image quality controls</p></li>
+<li><p>Weather-resistant housing (IP65 when properly installed)</p></li>
+</ul>
+</section>
+</section>
+<section id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h1>
+<section id="web-interface-access-issues">
+<h2>Web Interface Access Issues<a class="headerlink" href="#web-interface-access-issues" title="Link to this heading"></a></h2>
+<section id="cannot-access-web-interface">
+<h3>Cannot Access Web Interface<a class="headerlink" href="#cannot-access-web-interface" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Verify PoE switch shows power indicator for camera port</p></li>
+<li><p>Check ethernet cable connection</p></li>
+<li><p>Try accessing default IP: <code class="docutils literal notranslate"><span class="pre">192.168.123.250</span></code></p></li>
+<li><p><strong>For multiple cameras:</strong> Ensure only one camera is powered on, or use DHCP</p></li>
+<li><p>Ensure computer and camera are on same network</p></li>
+</ul>
+</section>
+</section>
+<section id="video-stream-issues">
+<h2>Video Stream Issues<a class="headerlink" href="#video-stream-issues" title="Link to this heading"></a></h2>
+<section id="no-live-video-stream">
+<h3>No Live Video Stream<a class="headerlink" href="#no-live-video-stream" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use Chrome or Firefox browser (Safari may have issues)</p></li>
+<li><p>Check that port 8080 is accessible</p></li>
+<li><p>Check network bandwidth and stability</p></li>
+<li><p>Restart camera via web interface <strong>System</strong> → <strong>Reboot</strong></p></li>
+<li><p>Verify camera lens is not obstructed</p></li>
+</ul>
+</section>
+</section>
+<section id="azure-upload-issues">
+<h2>Azure Upload Issues<a class="headerlink" href="#azure-upload-issues" title="Link to this heading"></a></h2>
+<section id="azure-upload-not-working">
+<h3>Azure Upload Not Working<a class="headerlink" href="#azure-upload-not-working" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Verify all three Azure fields are filled correctly:</p>
+<ul>
+<li><p>Storage Account Name (no special characters)</p></li>
+<li><p>Container Name (must exist in storage account)</p></li>
+<li><p>SAS Token (include leading <code class="docutils literal notranslate"><span class="pre">?</span></code>, check expiration date)</p></li>
+</ul>
+</li>
+<li><p>Check internet connectivity from camera’s network</p></li>
+<li><p>Confirm Azure storage account is active and accessible</p></li>
+<li><p><strong>Check firewall rules</strong> - ensure Azure domains are allowed</p></li>
+<li><p>Review upload interval setting (minimum 10 seconds)</p></li>
+</ul>
+</section>
+</section>
+<section id="image-quality-issues">
+<h2>Image Quality Issues<a class="headerlink" href="#image-quality-issues" title="Link to this heading"></a></h2>
+<section id="poor-image-quality">
+<h3>Poor Image Quality<a class="headerlink" href="#poor-image-quality" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Clean camera lens with soft, lint-free cloth</p></li>
+<li><p>Adjust camera controls: brightness, contrast, saturation</p></li>
+<li><p>Check lighting conditions and backlight compensation setting</p></li>
+<li><p>Verify camera is properly focused (fixed focus lens)</p></li>
+</ul>
+</section>
+</section>
+<section id="network-configuration-issues">
+<h2>Network Configuration Issues<a class="headerlink" href="#network-configuration-issues" title="Link to this heading"></a></h2>
+<section id="multiple-cameras-on-same-network">
+<h3>Multiple Cameras on Same Network<a class="headerlink" href="#multiple-cameras-on-same-network" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use DHCP for automatic IP assignment (recommended)</p></li>
+<li><p>OR configure cameras sequentially with static IPs</p></li>
+<li><p>Never power multiple unconfigured cameras simultaneously</p></li>
+</ul>
+</section>
+</section>
+<section id="factory-reset">
+<h2>Factory Reset<a class="headerlink" href="#factory-reset" title="Link to this heading"></a></h2>
+<p>If camera becomes unresponsive:</p>
+<ol class="arabic simple">
+<li><p>Locate small reset button on camera housing</p></li>
+<li><p>Press and hold reset button for 10 seconds while camera is powered</p></li>
+<li><p>Release button and wait for camera to reboot (about 2 minutes)</p></li>
+<li><p>Camera will return to default settings</p></li>
+<li><p><strong>Remember to reconfigure all settings after reset</strong></p></li>
+</ol>
+</section>
+</section>
+<section id="support-warranty">
+<h1>Support &amp; Warranty<a class="headerlink" href="#support-warranty" title="Link to this heading"></a></h1>
+<section id="technical-support">
+<h2>Technical Support<a class="headerlink" href="#technical-support" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Email: <a class="reference external" href="mailto:support&#37;&#52;&#48;octanis&#46;ch">support<span>&#64;</span>octanis<span>&#46;</span>ch</a></p></li>
+<li><p>Website: <a class="reference external" href="https://www.octanis.ch/en/anisca-vision-openwrt-camera">https://www.octanis.ch/en/anisca-vision-openwrt-camera</a></p></li>
+</ul>
+</section>
+<section id="warranty-information">
+<h2>Warranty Information<a class="headerlink" href="#warranty-information" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>2 years from purchase date</p></li>
+<li><p>Covers manufacturing defects</p></li>
+<li><p>Excludes damage from misuse or environmental factors</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Octanis.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
