@@ -139,7 +139,7 @@ Stream Information
 Camera Configuration
 ====================
 
-Access camera settings via **Services** → **Camera** → **⚙️ Camera Settings**
+Access camera settings via **Services** → **Camera** → **Camera Settings**
 
 Upload Settings
 ---------------
@@ -208,8 +208,8 @@ Required Information
 Setup Steps
 -----------
 
-1. In camera web interface, go to **Services** → **Camera** → **⚙️ Camera Settings**
-2. Scroll to **🗄️ Azure Storage Settings**
+1. In camera web interface, go to **Services** → **Camera** → **Camera Settings**
+2. Scroll to **Azure Storage Settings**
 3. Fill in the three required fields:
 
    * **Storage Account Name:** ``yourstorageaccount``
@@ -276,8 +276,8 @@ Copy Coordinates to Camera
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Copy the generated coordinates from image-map.net
-* Return to camera web interface **Services** → **Camera** → **⚙️ Camera Settings**
-* Scroll to **🔒 Privacy Settings**
+* Return to camera web interface **Services** → **Camera** → **Camera Settings**
+* Scroll to **Privacy Settings**
 * Paste coordinates into **Privacy Polygon** field
 * Format should be: ``x1,y1 x2,y2 x3,y3 x4,y4``
 * Save settings
