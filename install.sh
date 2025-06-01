@@ -247,10 +247,8 @@ echo "Clearing LuCI cache and restarting web server..."
 rm -rf /tmp/luci-*
 /etc/init.d/uhttpd restart
 
-# Step 13: Update version information with improved parsing
-echo "Getting version information..."
-
-# Get latest release info with better JSON parsing
+# Step 13: Update version information with PROPER JSON parsing
+echo "Getting latest release information..."
 RELEASE_JSON=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/releases/latest" 2>/dev/null || echo "")
 
 if [ -n "$RELEASE_JSON" ]; then
@@ -269,15 +267,14 @@ fi
 # Get commit hash using git ls-remote (more reliable than API)
 COMMIT_HASH=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/git/refs/heads/main" 2>/dev/null | grep -o '"sha":"[^"]*"' | cut -d'"' -f4 | cut -c1-7 2>/dev/null || echo "unknown")
 
-# Alternative method if API fails - try git ls-remote
+# Alternative method if API fails
 if [ "$COMMIT_HASH" = "unknown" ] || [ -z "$COMMIT_HASH" ]; then
-    # This requires git command, but fallback gracefully
     COMMIT_HASH=$(git ls-remote https://github.com/o16s/avi_scripts.git HEAD 2>/dev/null | cut -c1-7 || echo "unknown")
 fi
 
 UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
-# Create or update version env vars
+# Create version information file
 cat > /etc/avi_version.env << EOL
 AVI_SCRIPTS_VERSION="${VERSION}"
 AVI_SCRIPTS_UPDATED="${UPDATE_DATE}"
