@@ -129,7 +129,7 @@ capture_snapshot() {
     logger -p daemon.info -t "u3.sh" "Capturing snapshot via v4l2-ctl"
     v4l2-ctl -d /dev/video0 \
         --set-fmt-video=width=1280,height=720,pixelformat=MJPG \
-        --stream-mmap --stream-count=1 \
+        --stream-mmap --stream-count=11 --stream-skip=10 \
         --stream-to="$output_file" 2>/dev/null && [ -s "$output_file" ]
 }
 

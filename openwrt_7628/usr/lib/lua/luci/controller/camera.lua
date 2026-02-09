@@ -39,7 +39,7 @@ function action_snapshot()
     else
         sys.exec("v4l2-ctl -d /dev/video0 "
             .. "--set-fmt-video=width=1280,height=720,pixelformat=MJPG "
-            .. "--stream-mmap --stream-count=1 "
+            .. "--stream-mmap --stream-count=11 --stream-skip=10 "
             .. "--stream-to=" .. tmp_file .. " 2>/dev/null")
         local f = nixio.open(tmp_file, "r")
         if f then
