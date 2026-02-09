@@ -146,10 +146,32 @@ publish_to_mqtt() {
         fi
     fi
 
+    # Gather system metrics
+    file_size=$(wc -c < "$file_path" 2>/dev/null)
+    load_avg=$(cut -d' ' -f1,2,3 /proc/loadavg 2>/dev/null)
+    mem_avail=$(awk '/MemAvailable/ {print $2}' /proc/meminfo 2>/dev/null)
+    uptime_sec=$(cut -d' ' -f1 /proc/uptime 2>/dev/null)
+    flash_used=$(df /overlay 2>/dev/null | awk 'NR==2{print $5}' | tr -d '%')
+    ip_addr=$(ip -4 addr show br-lan 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | head -1)
+
+    # Load version info
+    avi_version="" avi_commit=""
+    if [ -f /etc/avi_version.env ]; then
+        . /etc/avi_version.env
+        avi_version="$AVI_SCRIPTS_VERSION"
+        avi_commit="$AVI_SCRIPTS_COMMIT"
+    fi
+
     # Publish status JSON
-    file_size=$(wc -c < "$file_path")
-    if mosquitto_pub $mqtt_args -t "${MQTT_TOPIC}/status" \
-        -m "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"size\":${file_size},\"interval\":${UPLOAD_INTERVAL}}" 2>/dev/null; then
+    status_json="{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"size\":${file_size:-0},\"interval\":${UPLOAD_INTERVAL}"
+    status_json="${status_json},\"customer\":\"${CUSTOMER}\",\"camera\":\"${CAMNAME}\""
+    status_json="${status_json},\"version\":\"${avi_version}\",\"commit\":\"${avi_commit}\""
+    status_json="${status_json},\"brightness\":${CAM_BRIGHTNESS:-0},\"contrast\":${CAM_CONTRAST:-32},\"saturation\":${CAM_SATURATION:-64}"
+    status_json="${status_json},\"gain\":${CAM_GAIN:-20},\"exposure_auto\":${CAM_EXPOSURE_AUTO:-3},\"wb_auto\":${CAM_AUTO_WB:-1}"
+    status_json="${status_json},\"load\":\"${load_avg}\",\"mem_available_kb\":${mem_avail:-0},\"uptime_sec\":${uptime_sec:-0}"
+    status_json="${status_json},\"flash_used_pct\":${flash_used:-0},\"ip\":\"${ip_addr}\"}"
+
+    if mosquitto_pub $mqtt_args -t "${MQTT_TOPIC}/status" -m "$status_json" 2>/dev/null; then
         logger -p daemon.info -t "u3.sh" "MQTT status published to ${MQTT_TOPIC}/status"
     else
         logger -p daemon.warn -t "u3.sh" "MQTT status publish failed"
