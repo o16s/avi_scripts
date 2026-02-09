@@ -78,25 +78,20 @@ end
 
 function action_latest()
     local http = require "luci.http"
-    local nixio = require "nixio"
+    local fs = require "nixio.fs"
 
     local path = "/tmp/latest_snapshot.jpg"
-    local f = nixio.open(path, "r")
-    if f then
-        local stat = f:stat()
-        if stat and stat.size > 0 then
-            http.header("Content-Type", "image/jpeg")
-            http.header("Cache-Control", "no-cache")
-            http.write(f:read(stat.size))
-            f:close()
-            return
-        end
-        f:close()
-    end
+    local data = fs.readfile(path)
 
-    http.status(404, "Not Found")
-    http.header("Content-Type", "text/plain")
-    http.write("No snapshot available yet")
+    if data and #data > 0 then
+        http.header("Content-Type", "image/jpeg")
+        http.header("Cache-Control", "no-cache")
+        http.write(data)
+    else
+        http.status(404, "Not Found")
+        http.header("Content-Type", "text/plain")
+        http.write("No snapshot available yet")
+    end
 end
 
 function action_stream_toggle()
