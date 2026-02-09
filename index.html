@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Anisca Vision OpenWRT Camera User Manual &mdash; Anisca Vision OpenWRT Camera 1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
@@ -80,6 +80,13 @@
 <li><a class="reference internal" href="#getting-azure-sas-token">Getting Azure SAS Token</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#mqtt-configuration">MQTT Configuration</a><ul>
+<li><a class="reference internal" href="#what-gets-published">What Gets Published</a></li>
+<li><a class="reference internal" href="#id1">Setup Steps</a></li>
+<li><a class="reference internal" href="#mqtt-options">MQTT Options</a></li>
+<li><a class="reference internal" href="#status-json-fields">Status JSON Fields</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#s3-storage-configuration">S3 Storage Configuration</a></li>
 <li><a class="reference internal" href="#privacy-polygon-configuration">Privacy Polygon Configuration</a><ul>
 <li><a class="reference internal" href="#step-by-step-setup">Step-by-Step Setup</a><ul>
@@ -95,7 +102,6 @@
 </li>
 <li><a class="reference internal" href="#additional-settings">Additional Settings</a><ul>
 <li><a class="reference internal" href="#customer-and-camera-information">Customer and Camera Information</a></li>
-<li><a class="reference internal" href="#audio-settings">Audio Settings</a></li>
 <li><a class="reference internal" href="#monitoring">Monitoring</a></li>
 <li><a class="reference internal" href="#version-information">Version Information</a></li>
 <li><a class="reference internal" href="#user-manual-access">User Manual Access</a></li>
@@ -120,7 +126,7 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#network-access-control">Network Access Control</a><ul>
-<li><a class="reference internal" href="#block-all-internet-access-except-azure">Block All Internet Access Except Azure</a></li>
+<li><a class="reference internal" href="#restrict-internet-access">Restrict Internet Access</a></li>
 <li><a class="reference internal" href="#router-firewall-configuration">Router/Firewall Configuration</a></li>
 <li><a class="reference internal" href="#network-segmentation">Network Segmentation</a></li>
 </ul>
@@ -203,7 +209,7 @@
 <h1>Intended Use<a class="headerlink" href="#intended-use" title="Link to this heading"></a></h1>
 <p>The Anisca Vision OpenWRT Camera is a specialized, local first, surveillance device designed for automated monitoring and analytics. The camera:</p>
 <ul class="simple">
-<li><p><strong>Automatically captures and uploads</strong> snapshots to Microsoft Azure Blob Storage at configurable intervals</p></li>
+<li><p><strong>Automatically captures</strong> snapshots and optionally uploads to Azure Blob Storage or MQTT at configurable intervals</p></li>
 <li><p><strong>Provides real-time monitoring</strong> via web interface live view</p></li>
 <li><p><strong>Operates autonomously</strong> once configured - no manual intervention required</p></li>
 <li><p><strong>Extracts simple local analytics</strong> like motion in a ROI and color/brightness metrics</p></li>
@@ -240,7 +246,7 @@
 <ul class="simple">
 <li><p>PoE switch supporting up to 13W per port (or 5V USB power for WiFi only models)</p></li>
 <li><p>Ethernet cable with supplied rubber grommet (PoE models)</p></li>
-<li><p>Microsoft Azure account with Blob Storage</p></li>
+<li><p>Optional: Microsoft Azure account with Blob Storage, or an MQTT broker</p></li>
 </ul>
 </section>
 <section id="installation">
@@ -340,8 +346,8 @@
 <section id="camera-controls">
 <h2>Camera Controls<a class="headerlink" href="#camera-controls" title="Link to this heading"></a></h2>
 <p>The camera provides extensive image quality controls:</p>
-<table class="docutils align-default" id="id1">
-<caption><span class="caption-text">Camera Hardware Controls</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Camera Hardware Controls</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 30.0%" />
 <col style="width: 20.0%" />
@@ -399,7 +405,7 @@
 </section>
 <section id="azure-storage-configuration">
 <h1>Azure Storage Configuration<a class="headerlink" href="#azure-storage-configuration" title="Link to this heading"></a></h1>
-<p>Configure Azure Blob Storage for automatic uploads to a container:</p>
+<p>Azure Blob Storage uploads are <strong>disabled by default</strong>. Enable them in the camera settings to upload snapshots to a container.</p>
 <section id="required-information">
 <h2>Required Information<a class="headerlink" href="#required-information" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
@@ -413,6 +419,7 @@
 <ol class="arabic simple">
 <li><p>In camera web interface, go to <strong>Services</strong> → <strong>Camera</strong> → <strong>Camera Settings</strong></p></li>
 <li><p>Scroll to <strong>Azure Storage Settings</strong></p></li>
+<li><p>Check <strong>Enable Azure Blob Storage Upload</strong></p></li>
 <li><p>Fill in the three required fields:</p>
 <ul class="simple">
 <li><p><strong>Storage Account Name:</strong> <code class="docutils literal notranslate"><span class="pre">yourstorageaccount</span></code></p></li>
@@ -442,6 +449,60 @@
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Keep your SAS token secure. Set appropriate expiration dates and minimal required permissions.</p>
+</div>
+</section>
+</section>
+<section id="mqtt-configuration">
+<h1>MQTT Configuration<a class="headerlink" href="#mqtt-configuration" title="Link to this heading"></a></h1>
+<p>The camera can publish snapshots and status data to an MQTT broker. MQTT is <strong>disabled by default</strong> and can be used alongside or instead of Azure uploads.</p>
+<section id="what-gets-published">
+<h2>What Gets Published<a class="headerlink" href="#what-gets-published" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>{topic}/snapshot</strong> – Raw JPEG snapshot image (optional, enabled by default when MQTT is on)</p></li>
+<li><p><strong>{topic}/status</strong> – JSON status message with timestamp, file size, device metrics, camera settings, and image metrics</p></li>
+</ul>
+</section>
+<section id="id1">
+<h2>Setup Steps<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>In camera web interface, go to <strong>Services</strong> → <strong>Camera</strong> → <strong>Camera Settings</strong></p></li>
+<li><p>Scroll to <strong>MQTT Settings</strong></p></li>
+<li><p>Check <strong>Enable MQTT Publishing</strong></p></li>
+<li><p>Configure the connection:</p>
+<ul class="simple">
+<li><p><strong>Broker Host:</strong> Hostname or IP of your MQTT broker (e.g. <code class="docutils literal notranslate"><span class="pre">mqtt.example.com</span></code>)</p></li>
+<li><p><strong>Port:</strong> <code class="docutils literal notranslate"><span class="pre">1883</span></code> for plain, <code class="docutils literal notranslate"><span class="pre">8883</span></code> for TLS</p></li>
+<li><p><strong>Username / Password:</strong> Optional, depends on broker configuration</p></li>
+<li><p><strong>Base Topic:</strong> e.g. <code class="docutils literal notranslate"><span class="pre">cameras/site1/cam1</span></code></p></li>
+</ul>
+</li>
+<li><p>Save settings</p></li>
+</ol>
+</section>
+<section id="mqtt-options">
+<h2>MQTT Options<a class="headerlink" href="#mqtt-options" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>QoS Level:</strong> 0 (fire and forget), 1 (at least once), or 2 (exactly once). Default: 1</p></li>
+<li><p><strong>Retain Messages:</strong> When enabled, the broker keeps the last snapshot so new subscribers receive it immediately. Default: on</p></li>
+<li><p><strong>Publish Snapshot Image:</strong> Toggle whether the raw JPEG binary is published to <code class="docutils literal notranslate"><span class="pre">{topic}/snapshot</span></code>. The status JSON is always published. Default: on</p></li>
+</ul>
+</section>
+<section id="status-json-fields">
+<h2>Status JSON Fields<a class="headerlink" href="#status-json-fields" title="Link to this heading"></a></h2>
+<p>The status message published to <code class="docutils literal notranslate"><span class="pre">{topic}/status</span></code> includes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">timestamp</span></code> – UTC ISO 8601 timestamp</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">size</span></code> – Snapshot file size in bytes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interval</span></code> – Upload interval in seconds</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">customer</span></code>, <code class="docutils literal notranslate"><span class="pre">camera</span></code> – Camera identity</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">version</span></code>, <code class="docutils literal notranslate"><span class="pre">commit</span></code> – Installed software version</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">brightness</span></code>, <code class="docutils literal notranslate"><span class="pre">contrast</span></code>, <code class="docutils literal notranslate"><span class="pre">saturation</span></code>, <code class="docutils literal notranslate"><span class="pre">gain</span></code>, <code class="docutils literal notranslate"><span class="pre">exposure_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">wb_auto</span></code> – Camera hardware settings</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">load</span></code>, <code class="docutils literal notranslate"><span class="pre">mem_available_kb</span></code>, <code class="docutils literal notranslate"><span class="pre">uptime_sec</span></code>, <code class="docutils literal notranslate"><span class="pre">flash_used_pct</span></code>, <code class="docutils literal notranslate"><span class="pre">ip</span></code> – Device metrics</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">img_r</span></code>, <code class="docutils literal notranslate"><span class="pre">img_g</span></code>, <code class="docutils literal notranslate"><span class="pre">img_b</span></code>, <code class="docutils literal notranslate"><span class="pre">img_brightness</span></code>, <code class="docutils literal notranslate"><span class="pre">img_green_pct</span></code>, <code class="docutils literal notranslate"><span class="pre">img_diff_pct</span></code> – Image metrics (when enabled)</p></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You can use MQTT without Azure. For a local-only setup, enable MQTT and leave Azure disabled.</p>
 </div>
 </section>
 </section>
@@ -515,17 +576,6 @@
 <li><p><strong>Customer Name:</strong> Identifier for your organization. This is the folder name of all the snapshots of this camera in the Azure Blob Storage container.</p></li>
 <li><p><strong>Camera Name:</strong> Unique identifier for this camera (defaults to serial number). This is the folder name of the camera and filename of the latest snapshot of this camera.</p></li>
 </ul>
-</section>
-<section id="audio-settings">
-<h2>Audio Settings<a class="headerlink" href="#audio-settings" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p><strong>Enable Audio Recording:</strong> Toggle audio capture on/off</p></li>
-<li><p><strong>Audio Duration:</strong> Length of audio clips (seconds)</p></li>
-</ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Audio recording is disabled by default and may not be available on all models.</p>
-</div>
 </section>
 <section id="monitoring">
 <h2>Monitoring<a class="headerlink" href="#monitoring" title="Link to this heading"></a></h2>
@@ -639,27 +689,31 @@
 </section>
 <section id="network-access-control">
 <h2>Network Access Control<a class="headerlink" href="#network-access-control" title="Link to this heading"></a></h2>
-<section id="block-all-internet-access-except-azure">
-<h3>Block All Internet Access Except Azure<a class="headerlink" href="#block-all-internet-access-except-azure" title="Link to this heading"></a></h3>
-<p>The camera should only communicate with Microsoft Azure services, if the cloud connectivity is desired. Configure your firewall/router to:</p>
-<p><strong>Only allow outbound connections to:</strong></p>
+<section id="restrict-internet-access">
+<h3>Restrict Internet Access<a class="headerlink" href="#restrict-internet-access" title="Link to this heading"></a></h3>
+<p>The camera should only communicate with the services you have enabled. Configure your firewall/router to allow only the necessary destinations:</p>
+<p><strong>Azure uploads (if enabled):</strong></p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">*.blob.core.windows.net</span></code> (Azure Blob Storage)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">*.core.windows.net</span></code> (Azure endpoints)</p></li>
-<li><p>Port 443 (HTTPS) for secure uploads</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*.blob.core.windows.net</span></code> (Azure Blob Storage) on port 443 (HTTPS)</p></li>
+</ul>
+<p><strong>MQTT (if enabled):</strong></p>
+<ul class="simple">
+<li><p>Your MQTT broker host on the configured port (default 1883, or 8883 for TLS)</p></li>
 </ul>
 </section>
 <section id="router-firewall-configuration">
 <h3>Router/Firewall Configuration<a class="headerlink" href="#router-firewall-configuration" title="Link to this heading"></a></h3>
 <ol class="arabic simple">
 <li><p>Create a dedicated VLAN for IoT devices including the camera</p></li>
-<li><p>Apply strict egress filtering allowing only Azure domains</p></li>
+<li><p>Apply strict egress filtering allowing only required destinations</p></li>
 <li><p>Block all other outbound internet traffic from camera IP</p></li>
 </ol>
 <p><strong>Example firewall rules:</strong></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Allow Azure Blob Storage</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Allow Azure Blob Storage (if enabled)</span>
 <span class="n">ALLOW</span> <span class="n">camera_ip</span> <span class="o">-&gt;</span> <span class="o">*.</span><span class="n">blob</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">windows</span><span class="o">.</span><span class="n">net</span><span class="p">:</span><span class="mi">443</span>
-<span class="n">ALLOW</span> <span class="n">camera_ip</span> <span class="o">-&gt;</span> <span class="o">*.</span><span class="n">core</span><span class="o">.</span><span class="n">windows</span><span class="o">.</span><span class="n">net</span><span class="p">:</span><span class="mi">443</span>
+
+<span class="c1"># Allow MQTT broker (if enabled)</span>
+<span class="n">ALLOW</span> <span class="n">camera_ip</span> <span class="o">-&gt;</span> <span class="n">mqtt_broker_ip</span><span class="p">:</span><span class="mi">1883</span>
 
 <span class="c1"># Block all other internet access</span>
 <span class="n">DENY</span> <span class="n">camera_ip</span> <span class="o">-&gt;</span> <span class="o">*</span> <span class="p">(</span><span class="n">internet</span><span class="p">)</span>
@@ -792,6 +846,7 @@
 <section id="azure-upload-not-working">
 <h3>Azure Upload Not Working<a class="headerlink" href="#azure-upload-not-working" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Verify <strong>Enable Azure Blob Storage Upload</strong> is checked in camera settings</p></li>
 <li><p>Verify all three Azure fields are filled correctly:</p>
 <ul>
 <li><p>Storage Account Name (no special characters)</p></li>
@@ -802,7 +857,7 @@
 <li><p>Check internet connectivity from camera’s network</p></li>
 <li><p>Confirm Azure storage account is active and accessible</p></li>
 <li><p><strong>Check firewall rules</strong> - ensure Azure domains are allowed</p></li>
-<li><p>Review upload interval setting (minimum 10 seconds)</p></li>
+<li><p>Review upload interval setting (minimum 30 seconds)</p></li>
 </ul>
 </section>
 </section>
