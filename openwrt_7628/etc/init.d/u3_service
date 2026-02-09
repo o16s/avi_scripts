@@ -6,17 +6,38 @@ USE_PROCD=1
 
 start_service() {
     logger -p daemon.info -t "u3_service" "Starting u3 camera service"
-    
+
+    # One-time USB + camera init (runs once per service start, re-runs on procd respawn)
+    logger -p daemon.info -t "u3_service" "Initializing GPIO 491 (USB load switch)"
+    echo 491 > /sys/class/gpio/export 2>/dev/null || true
+    echo out > /sys/class/gpio/gpio491/direction
+    echo 1 > /sys/class/gpio/gpio491/value
+    logger -p daemon.info -t "u3_service" "Waiting 10s for USB camera to settle"
+    sleep 10
+
+    if [ -f "/bin/camsetup.sh" ]; then
+        logger -p daemon.info -t "u3_service" "Running camera setup"
+        /bin/camsetup.sh
+        if [ $? -eq 0 ]; then
+            logger -p daemon.info -t "u3_service" "Camera setup completed"
+        else
+            logger -p daemon.warn -t "u3_service" "Camera setup failed"
+        fi
+        sleep 2
+    else
+        logger -p daemon.warn -t "u3_service" "camsetup.sh not found"
+    fi
+
     procd_open_instance
     procd_set_param command /bin/sh -c 'while true; do
         /bin/u3.sh
-        
+
         # Load interval from .env file
         if [ -f "/root/.env" ]; then
             . /root/.env
             INTERVAL="$UPLOAD_INTERVAL"
         fi
-        
+
         # Set default if empty or invalid
         case "$INTERVAL" in
             '"'"''"'"'|*[!0-9]*) INTERVAL=60 ;;
@@ -25,20 +46,14 @@ start_service() {
                 if [ "$INTERVAL" -gt 3600 ]; then INTERVAL=3600; fi
                 ;;
         esac
-        
+
         logger -p daemon.debug -t "u3_service" "Sleeping for $INTERVAL seconds"
-        echo "Sleeping for $INTERVAL seconds"
         sleep $INTERVAL
     done'
     procd_set_param respawn 4 20 20
     procd_close_instance
-    
-    logger -p daemon.info -t "u3_service" "u3 camera service started"
-}
 
-stop_service() {
-    logger -p daemon.info -t "u3_service" "Stopping u3 camera service"
-    service_stop /bin/sh
+    logger -p daemon.info -t "u3_service" "u3 camera service started"
 }
 
 service_triggers() {

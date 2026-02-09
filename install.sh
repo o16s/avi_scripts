@@ -234,11 +234,12 @@ fi
 echo "Enabling services..."
 /etc/init.d/u3_service enable
 /etc/init.d/cron enable
-/etc/init.d/mjpg-streamer enable
+# Note: mjpg-streamer is NOT auto-enabled — live streaming is opt-in.
+# The capture system uses v4l2-ctl directly and falls back to mjpg-streamer if running.
+# To enable live streaming: /etc/init.d/mjpg-streamer enable && /etc/init.d/mjpg-streamer start
 
 # Step 11: Restart services
 echo "Restarting services..."
-/etc/init.d/mjpg-streamer restart
 /etc/init.d/cron restart
 /etc/init.d/u3_service restart
 
@@ -299,8 +300,9 @@ echo "🔍 To verify installation:"
 echo "1. Check scripts: ls -la /bin/*.sh"
 echo "2. Verify crontab: cat /etc/crontabs/root"
 echo "3. Check service status: /etc/init.d/u3_service status"
-echo "4. Test camera: curl http://localhost:8080/?action=snapshot > /tmp/test.jpg"
+echo "4. Test camera: v4l2-ctl -d /dev/video0 --set-fmt-video=pixelformat=MJPG --stream-mmap --stream-count=1 --stream-to=/tmp/test.jpg && file /tmp/test.jpg"
 echo "5. Access LuCI camera: Services → Camera"
+echo "6. Optional live streaming: /etc/init.d/mjpg-streamer enable && /etc/init.d/mjpg-streamer start"
 echo ""
 echo "📝 If you need to modify environment variables:"
 echo "   vi /root/.env"

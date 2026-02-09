@@ -1,10 +1,11 @@
 <%+header%>
 
 <%
--- Get current host dynamically on server side
 local current_host = luci.http.getenv("HTTP_HOST") or luci.http.getenv("SERVER_NAME") or "localhost"
 local stream_url = "http://" .. current_host .. ":8080/?action=stream"
-local snapshot_url = "http://" .. current_host .. ":8080/?action=snapshot"
+local latest_url = luci.dispatcher.build_url("admin", "services", "camera", "latest")
+local toggle_url = luci.dispatcher.build_url("admin", "services", "camera", "stream_toggle")
+local status_url = luci.dispatcher.build_url("admin", "services", "camera", "stream_status")
 local snapshot_endpoint = luci.dispatcher.build_url("admin", "services", "camera", "snapshot")
 local env_settings_url = luci.dispatcher.build_url("admin", "services", "camera", "env")
 
@@ -24,60 +25,12 @@ local avi_commit = get_version_value("AVI_SCRIPTS_COMMIT")
 local avi_manual_url = get_version_value("AVI_SCRIPTS_MANUAL_URL")
 %>
 
-<script type="text/javascript">
-//<![CDATA[
-var streamUrl = '<%=stream_url%>';
-var snapshotUrl = '<%=snapshot_url%>';
-var snapshotEndpoint = '<%=snapshot_endpoint%>';
-
-function refreshStream() {
-    var img = document.getElementById('cameraStream');
-    img.src = streamUrl + '?t=' + new Date().getTime();
-    document.getElementById('lastRefresh').textContent = new Date().toLocaleString();
-}
-
-function takeSnapshot() {
-    window.open(snapshotEndpoint, '_blank');
-}
-
-function toggleFullscreen() {
-    var container = document.getElementById('streamContainer');
-    if (container.classList.contains('fullscreen')) {
-        container.classList.remove('fullscreen');
-    } else {
-        container.classList.add('fullscreen');
-    }
-}
-
-// Update timestamp every second
-setInterval(function() {
-    document.getElementById('timestamp').textContent = new Date().toLocaleString();
-}, 1000);
-
-// Handle ESC key for fullscreen exit
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        var container = document.getElementById('streamContainer');
-        if (container.classList.contains('fullscreen')) {
-            toggleFullscreen();
-        }
-    }
-});
-//]]>
-</script>
-
 <style type="text/css">
-.camera-controls {
-    margin: 15px 0;
-    text-align: center;
-}
-.camera-controls input, .camera-controls .cbi-button {
-    margin: 0 5px;
-}
 .stream-container {
     text-align: center;
     margin: 20px 0;
     position: relative;
+    cursor: pointer;
 }
 .stream-container img {
     max-width: 100%;
@@ -102,6 +55,68 @@ document.addEventListener('keydown', function(e) {
     max-height: 95vh !important;
     border: none !important;
 }
+.play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.stream-container:hover .play-overlay {
+    background: rgba(0,0,0,0.7);
+}
+.play-overlay::after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 18px 0 18px 30px;
+    border-color: transparent transparent transparent #fff;
+    margin-left: 5px;
+}
+.stop-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: rgba(180,0,0,0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.stream-container:hover .stop-overlay {
+    opacity: 1;
+}
+.stop-overlay::after {
+    content: "";
+    display: block;
+    width: 24px;
+    height: 24px;
+    background: #fff;
+    border-radius: 3px;
+}
+.camera-controls {
+    margin: 15px 0;
+    text-align: center;
+}
+.camera-controls input {
+    margin: 0 5px;
+}
 .camera-info table {
     width: 100%;
 }
@@ -116,12 +131,9 @@ document.addEventListener('keydown', function(e) {
     border-radius: 50%;
     margin-right: 5px;
 }
-.status-online {
-    background-color: #5cb85c;
-}
-.status-offline {
-    background-color: #d9534f;
-}
+.status-online { background-color: #5cb85c; }
+.status-offline { background-color: #d9534f; }
+.status-streaming { background-color: #f0ad4e; }
 .version-info {
     background: #e8f4fd;
     border: 1px solid #bee5eb;
@@ -143,19 +155,29 @@ document.addEventListener('keydown', function(e) {
     margin: 0;
     flex-grow: 1;
 }
+.countdown {
+    font-size: 14px;
+    font-weight: bold;
+    color: #f0ad4e;
+}
+.snapshot-hint {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
 </style>
 
 <!-- Header with Logo -->
 <div class="logo-header">
     <img src="/luci-static/anisca-logo.png" alt="Anisca Vision" onerror="this.style.display='none';">
-    <h2>Camera Live Stream</h2>
+    <h2>Camera</h2>
 </div>
 
 <!-- Navigation -->
 <div class="cbi-section">
     <div class="cbi-section-node">
         <div style="text-align: center; margin: 10px 0;">
-            <a href="<%=env_settings_url%>" class="cbi-button cbi-button-edit">⚙️ Camera Settings</a>
+            <a href="<%=env_settings_url%>" class="cbi-button cbi-button-edit">Camera Settings</a>
         </div>
     </div>
 </div>
@@ -165,11 +187,11 @@ document.addEventListener('keydown', function(e) {
     <h3>System Information</h3>
     <div class="cbi-section-node">
         <div class="version-info">
-            <strong>📦 AVI Scripts Version:</strong> <%=avi_version%><br>
-            <strong>🕒 Last Updated:</strong> <%=avi_updated%><br>
-            <strong>🔗 Commit:</strong> <%=avi_commit%><br>
+            <strong>AVI Scripts Version:</strong> <%=avi_version%><br>
+            <strong>Last Updated:</strong> <%=avi_updated%><br>
+            <strong>Commit:</strong> <%=avi_commit%><br>
             <% if avi_manual_url ~= "Unknown" then %>
-            <strong>📖 Documentation:</strong> <a href="<%=avi_manual_url%>" target="_blank">User Manual</a>
+            <strong>Documentation:</strong> <a href="<%=avi_manual_url%>" target="_blank">User Manual</a>
             <% end %>
         </div>
     </div>
@@ -185,16 +207,16 @@ document.addEventListener('keydown', function(e) {
                     <td width="20%"><strong>Status:</strong></td>
                     <td width="30%">
                         <span class="status-indicator status-online" id="statusIndicator"></span>
-                        <span id="statusText">Online</span>
+                        <span id="statusText">Capture Only</span>
                     </td>
                     <td width="20%"><strong>Time:</strong></td>
                     <td width="30%"><span id="timestamp"><%=os.date("%c")%></span></td>
                 </tr>
                 <tr>
-                    <td><strong>Host:</strong></td>
-                    <td><%=current_host%></td>
-                    <td><strong>Port:</strong></td>
-                    <td>8080</td>
+                    <td><strong>Mode:</strong></td>
+                    <td id="modeText">Snapshot</td>
+                    <td><strong>Countdown:</strong></td>
+                    <td><span id="countdown" class="countdown">--</span></td>
                 </tr>
             </table>
         </div>
@@ -203,89 +225,231 @@ document.addEventListener('keydown', function(e) {
 
 <!-- Controls -->
 <div class="cbi-section">
-    <h3>Stream Controls</h3>
     <div class="cbi-section-node">
         <div class="camera-controls">
-            <input type="button" class="cbi-button" value="Refresh" onclick="refreshStream()" />
             <input type="button" class="cbi-button cbi-button-save" value="Snapshot" onclick="takeSnapshot()" />
             <input type="button" class="cbi-button" value="Fullscreen" onclick="toggleFullscreen()" />
         </div>
     </div>
 </div>
 
-<!-- Live Stream -->
+<!-- Camera View -->
 <div class="cbi-section">
-    <h3>Live View</h3>
+    <h3>Camera View</h3>
     <div class="cbi-section-node">
-        <div id="streamContainer" class="stream-container">
-            <img id="cameraStream" 
-                 src="<%=stream_url%>" 
-                 alt="Camera Stream Loading..." 
-                 onerror="document.getElementById('statusIndicator').className='status-indicator status-offline'; document.getElementById('statusText').textContent='Offline';" 
-                 onload="document.getElementById('statusIndicator').className='status-indicator status-online'; document.getElementById('statusText').textContent='Online';" />
+        <div id="streamContainer" class="stream-container" onclick="toggleStream()">
+            <img id="cameraImage"
+                 src="<%=latest_url%>?t=<%=os.time()%>"
+                 alt="Loading snapshot..."
+                 onerror="this.alt='No snapshot available yet'" />
+            <div id="playOverlay" class="play-overlay"></div>
+            <div id="stopOverlay" class="stop-overlay" style="display:none;"></div>
         </div>
+        <div class="snapshot-hint" id="viewHint">Click image to start live streaming (5 min)</div>
     </div>
 </div>
 
-<!-- Stream Info -->
-<div class="cbi-section">
-    <h3>Stream Information</h3>
-    <div class="cbi-section-node">
-        <div class="camera-info">
-            <table class="cbi-section-table">
-                <tr>
-                    <td width="25%"><strong>Stream URL:</strong></td>
-                    <td><code><%=stream_url%></code></td>
-                </tr>
-                <tr>
-                    <td><strong>Snapshot URL:</strong></td>
-                    <td><code><%=snapshot_url%></code></td>
-                </tr>
-                <tr>
-                    <td><strong>Last Refresh:</strong></td>
-                    <td><span id="lastRefresh"><%=os.date("%c")%></span></td>
-                </tr>
-            </table>
-        </div>
-    </div>
-</div>
-
-
+<!-- Software Updates -->
 <div class="cbi-section">
     <h3>Anisca Vision Software Updates</h3>
     <p>Current Version: <span id="current-version"><%=luci.sys.exec("grep AVI_SCRIPTS_VERSION /etc/avi_version.env 2>/dev/null | cut -d'=' -f2 | tr -d '\"' || echo unknown")%></span></p>
     <button onclick="checkUpdates()" id="check-btn">Check for Updates</button>
     <div id="update-info" style="display:none; margin-top:10px; padding:10px; background:#f0f8ff;">
         <p><strong>Update available!</strong></p>
-        <p>Current: <span id="current-ver"></span> → Latest: <span id="latest-ver"></span></p>
+        <p>Current: <span id="current-ver"></span> &rarr; Latest: <span id="latest-ver"></span></p>
         <p>Run via SSH:</p>
         <code>curl -fsSL "https://install.anisca.io?$(date +%s)" | sh</code>
     </div>
-    <div id="up-to-date" style="display:none; color:green;">✅ Latest version installed</div>
+    <div id="up-to-date" style="display:none; color:green;">Latest version installed</div>
 </div>
 
-<script>
+<script type="text/javascript">
+//<![CDATA[
+var streamUrl = '<%=stream_url%>';
+var latestUrl = '<%=latest_url%>';
+var toggleUrl = '<%=toggle_url%>';
+var statusUrl = '<%=status_url%>';
+var snapshotEndpoint = '<%=snapshot_endpoint%>';
+
+var isStreaming = false;
+var refreshTimer = null;
+var pollTimer = null;
+var toggling = false;
+
+function takeSnapshot() {
+    window.open(snapshotEndpoint, '_blank');
+}
+
+function toggleFullscreen() {
+    var container = document.getElementById('streamContainer');
+    if (container.classList.contains('fullscreen')) {
+        container.classList.remove('fullscreen');
+    } else {
+        container.classList.add('fullscreen');
+    }
+}
+
+function switchToSnapshot() {
+    isStreaming = false;
+    var img = document.getElementById('cameraImage');
+    img.src = latestUrl + '?t=' + new Date().getTime();
+
+    document.getElementById('playOverlay').style.display = '';
+    document.getElementById('stopOverlay').style.display = 'none';
+    document.getElementById('viewHint').textContent = 'Click image to start live streaming (5 min)';
+    document.getElementById('modeText').textContent = 'Snapshot';
+    document.getElementById('statusText').textContent = 'Capture Only';
+    document.getElementById('statusIndicator').className = 'status-indicator status-online';
+    document.getElementById('countdown').textContent = '--';
+
+    startSnapshotRefresh();
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+function switchToStream(expiresIn) {
+    isStreaming = true;
+    var img = document.getElementById('cameraImage');
+    img.src = streamUrl;
+
+    document.getElementById('playOverlay').style.display = 'none';
+    document.getElementById('stopOverlay').style.display = '';
+    document.getElementById('viewHint').textContent = 'Click image to stop streaming';
+    document.getElementById('modeText').textContent = 'Live Streaming';
+    document.getElementById('statusText').textContent = 'Streaming';
+    document.getElementById('statusIndicator').className = 'status-indicator status-streaming';
+
+    stopSnapshotRefresh();
+    updateCountdown(expiresIn);
+    startStatusPoll();
+}
+
+function toggleStream() {
+    if (toggling) return;
+    toggling = true;
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', toggleUrl, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    // Get CSRF token from LuCI
+    var token = (document.querySelector('input[name="token"]') || {}).value || '';
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            toggling = false;
+            if (xhr.status === 200) {
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    if (resp.streaming) {
+                        switchToStream(resp.expires_in || 300);
+                    } else {
+                        switchToSnapshot();
+                    }
+                } catch(e) {}
+            }
+        }
+    };
+    xhr.send('token=' + encodeURIComponent(token));
+}
+
+function startSnapshotRefresh() {
+    stopSnapshotRefresh();
+    refreshTimer = setInterval(function() {
+        if (!isStreaming) {
+            var img = document.getElementById('cameraImage');
+            img.src = latestUrl + '?t=' + new Date().getTime();
+        }
+    }, 30000);
+}
+
+function stopSnapshotRefresh() {
+    if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+    }
+}
+
+function startStatusPoll() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', statusUrl, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    if (!resp.streaming && isStreaming) {
+                        switchToSnapshot();
+                    } else if (resp.streaming) {
+                        updateCountdown(resp.expires_in);
+                    }
+                } catch(e) {}
+            }
+        };
+        xhr.send();
+    }, 5000);
+}
+
+function updateCountdown(seconds) {
+    var el = document.getElementById('countdown');
+    if (seconds <= 0) {
+        el.textContent = 'Expiring...';
+        return;
+    }
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+// Handle ESC key for fullscreen exit
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var container = document.getElementById('streamContainer');
+        if (container && container.classList.contains('fullscreen')) {
+            toggleFullscreen();
+        }
+    }
+});
+
+// Update clock every second
+setInterval(function() {
+    document.getElementById('timestamp').textContent = new Date().toLocaleString();
+}, 1000);
+
+// Check initial streaming state and start appropriate mode
+(function() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', statusUrl, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var resp = JSON.parse(xhr.responseText);
+                if (resp.streaming) {
+                    switchToStream(resp.expires_in);
+                } else {
+                    startSnapshotRefresh();
+                }
+            } catch(e) {
+                startSnapshotRefresh();
+            }
+        }
+    };
+    xhr.send();
+})();
+
 function checkUpdates() {
-    const btn = document.getElementById('check-btn');
-    const current = document.getElementById('current-version').textContent.trim();
-    
+    var btn = document.getElementById('check-btn');
+    var current = document.getElementById('current-version').textContent.trim();
+
     btn.disabled = true;
     btn.textContent = 'Checking...';
-    
-    // Hide previous results
+
     document.getElementById('update-info').style.display = 'none';
     document.getElementById('up-to-date').style.display = 'none';
-    
+
     fetch('https://api.github.com/repos/o16s/avi_scripts/releases/latest')
-        .then(r => r.json())
-        .then(data => {
-            const latest = data.tag_name.trim();
-            
-            // Debug: log the actual values
-            console.log('Current:', JSON.stringify(current));
-            console.log('Latest:', JSON.stringify(latest));
-            console.log('Equal?', latest === current);
-            
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var latest = data.tag_name.trim();
             if (latest === current) {
                 document.getElementById('up-to-date').style.display = 'block';
             } else {
@@ -294,11 +458,13 @@ function checkUpdates() {
                 document.getElementById('update-info').style.display = 'block';
             }
         })
-        .catch(() => alert('Failed to check updates'))
-        .finally(() => {
+        .catch(function() { alert('Failed to check updates'); })
+        .finally(function() {
             btn.disabled = false;
             btn.textContent = 'Check for Updates';
         });
 }
+//]]>
 </script>
+
 <%+footer%>

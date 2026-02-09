@@ -25,36 +25,6 @@ flock -n 200 || {
 }
 logger -p daemon.debug -t "u3.sh" "Acquired lock successfully"
 
-echo 0 > /sys/class/leds/green:wlan/brightness
-
-# Turn on USB device load switch GPIO11, with OpenWrt 22.03.5, r20134-5f15225c1e
-logger -p daemon.debug -t "u3.sh" "Setting up GPIO"
-echo 491 > /sys/class/gpio/export 2>/dev/null || true
-echo out > /sys/class/gpio/gpio491/direction
-echo 1 > /sys/class/gpio/gpio491/value  # HIGH
-sleep 10
-echo "waiting for the pin to settle"
-logger -p daemon.info -t "u3.sh" "GPIO setup completed"
-
-# --- Configure Camera Settings ---
-# Call the camera setup script
-if [ -f "/bin/camsetup.sh" ]; then
-    echo "Configuring camera settings..."
-    logger -p daemon.info -t "u3.sh" "Configuring camera settings"
-    /bin/camsetup.sh
-    if [ $? -eq 0 ]; then
-        echo "Camera configuration completed successfully"
-        logger -p daemon.info -t "u3.sh" "Camera configuration completed successfully"
-    else
-        echo "Warning: Camera configuration failed"
-        logger -p daemon.warn -t "u3.sh" "Camera configuration failed"
-    fi
-    sleep 2  # Give camera time to apply settings
-else
-    echo "Warning: camsetup.sh not found at /bin/camsetup.sh"
-    logger -p daemon.warn -t "u3.sh" "camsetup.sh not found at /bin/camsetup.sh"
-fi
-
 # --- Functions ---
 record_audio() {
     output_file="$1"
@@ -147,6 +117,22 @@ upload_to_azure() {
     fi
 }
 
+capture_snapshot() {
+    output_file="$1"
+    if pgrep mjpg_streamer >/dev/null 2>&1; then
+        # mjpg-streamer has /dev/video0, use HTTP snapshot
+        logger -p daemon.info -t "u3.sh" "mjpg-streamer active, using HTTP snapshot"
+        curl -s --max-time 10 "http://localhost:8080/?action=snapshot" > "$output_file" && [ -s "$output_file" ]
+        return $?
+    fi
+    # Direct v4l2 capture — no streaming daemon needed
+    logger -p daemon.info -t "u3.sh" "Capturing snapshot via v4l2-ctl"
+    v4l2-ctl -d /dev/video0 \
+        --set-fmt-video=width=1280,height=720,pixelformat=MJPG \
+        --stream-mmap --stream-count=1 \
+        --stream-to="$output_file" 2>/dev/null && [ -s "$output_file" ]
+}
+
 # --- Main ---
 DATE=$(date -u +%d-%m-%Y)
 TIME=$(date -u +%H_%M_%S)
@@ -189,13 +175,15 @@ LATEST_NAME="$CUSTOMER/latest/$CAMNAME.jpg"
 
 logger -p daemon.info -t "u3.sh" "Capturing snapshot"
 
-# Try to capture snapshot
-if curl -s --max-time 10 "http://localhost:8080/?action=snapshot" > "$SNAPSHOT_FILE" && [ -s "$SNAPSHOT_FILE" ]; then
+if capture_snapshot "$SNAPSHOT_FILE"; then
     FILE_SIZE=$(wc -c < "$SNAPSHOT_FILE" 2>/dev/null || echo "0")
     logger -p daemon.info -t "u3.sh" "Snapshot captured successfully: ${FILE_SIZE} bytes"
-    
+
     # Blacken regions (if polygon is defined)
     blacken_regions "$SNAPSHOT_FILE"
+
+    # Keep a persistent copy for the LuCI camera UI
+    cp "$SNAPSHOT_FILE" /tmp/latest_snapshot.jpg
 
     # Only send heartbeat if capture succeeds
     logger -p daemon.debug -t "u3.sh" "Sending heartbeat ping"
@@ -205,12 +193,10 @@ if curl -s --max-time 10 "http://localhost:8080/?action=snapshot" > "$SNAPSHOT_F
     logger -p daemon.info -t "u3.sh" "Starting Azure uploads"
     upload_to_azure "$SNAPSHOT_FILE" "$LATEST_NAME"
     upload_to_azure "$SNAPSHOT_FILE" "$BLOB_NAME"
-    
+
     logger -p daemon.info -t "u3.sh" "Camera capture cycle completed successfully"
 else
-    logger -p daemon.err -t "u3.sh" "Snapshot capture failed, restarting mjpg-streamer"
-    # Restart mjpg-streamer if capture fails
-    /etc/init.d/mjpg-streamer restart
+    logger -p daemon.err -t "u3.sh" "Snapshot capture failed"
     rm -f "$SNAPSHOT_FILE"
     exit 1
 fi
