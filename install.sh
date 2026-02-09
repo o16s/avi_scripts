@@ -11,12 +11,25 @@ if command -v v4l2-ctl >/dev/null 2>&1; then
 else
     echo "Installing v4l-utils..."
     opkg update && opkg install v4l-utils
-    
+
     if command -v v4l2-ctl >/dev/null 2>&1; then
         echo "✅ v4l-utils installed successfully"
     else
         echo "❌ Failed to install v4l-utils"
         exit 1
+    fi
+fi
+
+if command -v mosquitto_pub >/dev/null 2>&1; then
+    echo "✅ mosquitto-client already installed"
+else
+    echo "Installing mosquitto-client..."
+    opkg update && opkg install mosquitto-client
+
+    if command -v mosquitto_pub >/dev/null 2>&1; then
+        echo "✅ mosquitto-client installed successfully"
+    else
+        echo "⚠️ Failed to install mosquitto-client (MQTT publishing will be unavailable)"
     fi
 fi
 

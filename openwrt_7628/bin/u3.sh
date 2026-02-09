@@ -117,6 +117,45 @@ upload_to_azure() {
     fi
 }
 
+publish_to_mqtt() {
+    file_path="$1"
+
+    if [ "$MQTT_ENABLED" != "true" ]; then
+        return 0
+    fi
+
+    if ! command -v mosquitto_pub >/dev/null 2>&1; then
+        logger -p daemon.warn -t "u3.sh" "MQTT enabled but mosquitto_pub not found"
+        return 1
+    fi
+
+    mqtt_args="-h $MQTT_BROKER -p ${MQTT_PORT:-1883} -q ${MQTT_QOS:-1}"
+    if [ -n "$MQTT_USERNAME" ]; then
+        mqtt_args="$mqtt_args -u $MQTT_USERNAME -P $MQTT_PASSWORD"
+    fi
+    if [ "${MQTT_RETAIN:-true}" = "true" ]; then
+        mqtt_args="$mqtt_args -r"
+    fi
+
+    # Publish snapshot image
+    if [ "${MQTT_UPLOAD_IMAGE:-true}" = "true" ]; then
+        if mosquitto_pub $mqtt_args -t "${MQTT_TOPIC}/snapshot" -f "$file_path" 2>/dev/null; then
+            logger -p daemon.info -t "u3.sh" "MQTT snapshot published to ${MQTT_TOPIC}/snapshot"
+        else
+            logger -p daemon.warn -t "u3.sh" "MQTT snapshot publish failed"
+        fi
+    fi
+
+    # Publish status JSON
+    file_size=$(wc -c < "$file_path")
+    if mosquitto_pub $mqtt_args -t "${MQTT_TOPIC}/status" \
+        -m "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"size\":${file_size},\"interval\":${UPLOAD_INTERVAL}}" 2>/dev/null; then
+        logger -p daemon.info -t "u3.sh" "MQTT status published to ${MQTT_TOPIC}/status"
+    else
+        logger -p daemon.warn -t "u3.sh" "MQTT status publish failed"
+    fi
+}
+
 capture_snapshot() {
     output_file="$1"
     if pgrep mjpg_streamer >/dev/null 2>&1; then
@@ -194,6 +233,9 @@ if capture_snapshot "$SNAPSHOT_FILE"; then
     logger -p daemon.info -t "u3.sh" "Starting Azure uploads"
     upload_to_azure "$SNAPSHOT_FILE" "$LATEST_NAME"
     upload_to_azure "$SNAPSHOT_FILE" "$BLOB_NAME"
+
+    # Publish to MQTT (if enabled)
+    publish_to_mqtt "$SNAPSHOT_FILE"
 
     logger -p daemon.info -t "u3.sh" "Camera capture cycle completed successfully"
 else
