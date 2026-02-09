@@ -169,12 +169,53 @@ publish_to_mqtt() {
     status_json="${status_json},\"brightness\":${CAM_BRIGHTNESS:-0},\"contrast\":${CAM_CONTRAST:-32},\"saturation\":${CAM_SATURATION:-64}"
     status_json="${status_json},\"gain\":${CAM_GAIN:-20},\"exposure_auto\":${CAM_EXPOSURE_AUTO:-3},\"wb_auto\":${CAM_AUTO_WB:-1}"
     status_json="${status_json},\"load\":\"${load_avg}\",\"mem_available_kb\":${mem_avail:-0},\"uptime_sec\":${uptime_sec:-0}"
-    status_json="${status_json},\"flash_used_pct\":${flash_used:-0},\"ip\":\"${ip_addr}\"}"
+    status_json="${status_json},\"flash_used_pct\":${flash_used:-0},\"ip\":\"${ip_addr}\""
+    status_json="${status_json},\"img_r\":${IMG_R:-0},\"img_g\":${IMG_G:-0},\"img_b\":${IMG_B:-0}"
+    status_json="${status_json},\"img_brightness\":${IMG_BRIGHTNESS:-0},\"img_green_pct\":${IMG_GREEN_PCT:-0}"
+    status_json="${status_json},\"img_diff_pct\":${IMG_DIFF_PCT:-0}}"
 
     if mosquitto_pub $mqtt_args -t "${MQTT_TOPIC}/status" -m "$status_json" 2>/dev/null; then
         logger -p daemon.info -t "u3.sh" "MQTT status published to ${MQTT_TOPIC}/status"
     else
         logger -p daemon.warn -t "u3.sh" "MQTT status publish failed"
+    fi
+}
+
+compute_image_metrics() {
+    img="$1"
+    prev="/tmp/latest_snapshot.jpg"
+
+    IMG_R="" IMG_G="" IMG_B="" IMG_BRIGHTNESS="" IMG_GREEN_PCT="" IMG_DIFF_PCT=""
+
+    if ! command -v convert >/dev/null 2>&1; then
+        return 0
+    fi
+
+    # Mean RGB via 1x1 resize (one convert call)
+    # Output: "0,0: (28,47,38)  #1C2F26  srgb(28,47,38)"
+    rgb_line=$(convert "$img" -resize 1x1! txt:- 2>/dev/null | tail -1)
+    if [ -n "$rgb_line" ]; then
+        rgb=$(echo "$rgb_line" | grep -o '([0-9]*,[0-9]*,[0-9]*)' | tr -d '()')
+        IMG_R=$(echo "$rgb" | cut -d, -f1)
+        IMG_G=$(echo "$rgb" | cut -d, -f2)
+        IMG_B=$(echo "$rgb" | cut -d, -f3)
+
+        # Brightness = standard luminance from RGB (integer math, no second convert call)
+        IMG_BRIGHTNESS=$(( (IMG_R * 299 + IMG_G * 587 + IMG_B * 114) / 1000 ))
+
+        # Green index = G% of total RGB
+        total=$(( IMG_R + IMG_G + IMG_B ))
+        if [ "$total" -gt 0 ]; then
+            IMG_GREEN_PCT=$(( IMG_G * 100 / total ))
+        else
+            IMG_GREEN_PCT=0
+        fi
+    fi
+
+    # Frame difference vs previous snapshot (one convert call)
+    if [ -f "$prev" ]; then
+        IMG_DIFF_PCT=$(convert "$img" "$prev" -compose difference -composite \
+            -colorspace Gray -resize 1x1! -format "%[fx:mean*100]" info: 2>/dev/null)
     fi
 }
 
@@ -244,6 +285,9 @@ if capture_snapshot "$SNAPSHOT_FILE"; then
 
     # Blacken regions (if polygon is defined)
     blacken_regions "$SNAPSHOT_FILE"
+
+    # Compute image metrics (before cp overwrites previous frame)
+    compute_image_metrics "$SNAPSHOT_FILE"
 
     # Keep a persistent copy for the LuCI camera UI
     cp "$SNAPSHOT_FILE" /tmp/latest_snapshot.jpg
