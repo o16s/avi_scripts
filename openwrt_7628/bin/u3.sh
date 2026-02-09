@@ -195,7 +195,7 @@ compute_image_metrics() {
     # Output: "0,0: (28,47,38)  #1C2F26  srgb(28,47,38)"
     rgb_line=$(convert "$img" -resize 1x1! txt:- 2>/dev/null | tail -1)
     if [ -n "$rgb_line" ]; then
-        rgb=$(echo "$rgb_line" | grep -o '([0-9]*,[0-9]*,[0-9]*)' | tr -d '()')
+        rgb=$(echo "$rgb_line" | grep -o '([0-9]*,[0-9]*,[0-9]*)' | head -1 | tr -d '()')
         IMG_R=$(echo "$rgb" | cut -d, -f1)
         IMG_G=$(echo "$rgb" | cut -d, -f2)
         IMG_B=$(echo "$rgb" | cut -d, -f3)
@@ -212,10 +212,13 @@ compute_image_metrics() {
         fi
     fi
 
+    logger -p daemon.info -t "u3.sh" "Image metrics: R=${IMG_R} G=${IMG_G} B=${IMG_B} bright=${IMG_BRIGHTNESS} green=${IMG_GREEN_PCT}%"
+
     # Frame difference vs previous snapshot (one convert call)
     if [ -f "$prev" ]; then
         IMG_DIFF_PCT=$(convert "$img" "$prev" -compose difference -composite \
             -colorspace Gray -resize 1x1! -format "%[fx:mean*100]" info: 2>/dev/null)
+        logger -p daemon.info -t "u3.sh" "Frame diff: ${IMG_DIFF_PCT}%"
     fi
 }
 
