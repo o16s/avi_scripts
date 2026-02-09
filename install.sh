@@ -243,7 +243,17 @@ if [ -d "./openwrt_7628/usr/lib/lua/luci/i18n" ]; then
     done
 fi
 
-# Step 10: Enable services
+# Step 10: Remove deprecated services
+# audio-capture was removed in v0.3.2
+if [ -f "/etc/init.d/audio-capture" ]; then
+    echo "Removing deprecated audio-capture service..."
+    /etc/init.d/audio-capture stop 2>/dev/null
+    /etc/init.d/audio-capture disable 2>/dev/null
+    rm -f /etc/init.d/audio-capture
+    echo "Removed: audio-capture"
+fi
+
+# Step 11: Enable services
 echo "Enabling services..."
 /etc/init.d/u3_service enable
 /etc/init.d/cron enable
@@ -251,17 +261,17 @@ echo "Enabling services..."
 # The capture system uses v4l2-ctl directly and falls back to mjpg-streamer if running.
 # To enable live streaming: /etc/init.d/mjpg-streamer enable && /etc/init.d/mjpg-streamer start
 
-# Step 11: Restart services
+# Step 12: Restart services
 echo "Restarting services..."
 /etc/init.d/cron restart
 /etc/init.d/u3_service restart
 
-# Step 12: Clear LuCI cache and restart web server
+# Step 13: Clear LuCI cache and restart web server
 echo "Clearing LuCI cache and restarting web server..."
 rm -rf /tmp/luci-*
 /etc/init.d/uhttpd restart
 
-# Step 13: Update version information with PROPER JSON parsing
+# Step 14: Update version information with PROPER JSON parsing
 echo "Getting latest release information..."
 RELEASE_JSON=$(wget -qO- "https://api.github.com/repos/o16s/avi_scripts/releases/latest" 2>/dev/null || echo "")
 
@@ -290,7 +300,7 @@ AVI_SCRIPTS_COMMIT="${COMMIT_HASH}"
 AVI_SCRIPTS_MANUAL_URL="https://o16s.github.io/avi_scripts/"
 EOL
 
-# Step 14: Cleanup
+# Step 15: Cleanup
 cd /
 rm -rf /tmp/avi_scripts_temp /tmp/install.tar.gz
 
