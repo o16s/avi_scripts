@@ -167,7 +167,8 @@ capture_snapshot() {
     # Briefly start mjpg-streamer for a clean capture
     logger -p daemon.info -t "u3.sh" "Starting mjpg-streamer for snapshot capture"
     /etc/init.d/mjpg-streamer start 2>/dev/null
-    sleep 2
+    sleep 1
+    /bin/camsetup.sh 2>/dev/null
     curl -s --max-time 10 "http://localhost:8080/?action=snapshot" > "$output_file"
     /etc/init.d/mjpg-streamer stop 2>/dev/null
     [ -s "$output_file" ]
