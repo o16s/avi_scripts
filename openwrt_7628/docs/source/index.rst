@@ -11,6 +11,7 @@ Anisca Vision OpenWRT Camera User Manual
    live-view
    camera-configuration
    azure-storage
+   mqtt
    s3-storage
    privacy-polygon
    additional-settings
@@ -25,7 +26,7 @@ Intended Use
 
 The Anisca Vision OpenWRT Camera is a specialized, local first, surveillance device designed for automated monitoring and analytics. The camera:
 
-* **Automatically captures and uploads** snapshots to Microsoft Azure Blob Storage at configurable intervals
+* **Automatically captures** snapshots and optionally uploads to Azure Blob Storage or MQTT at configurable intervals
 * **Provides real-time monitoring** via web interface live view
 * **Operates autonomously** once configured - no manual intervention required
 * **Extracts simple local analytics** like motion in a ROI and color/brightness metrics
@@ -61,7 +62,7 @@ What You Need
 
 * PoE switch supporting up to 13W per port (or 5V USB power for WiFi only models)
 * Ethernet cable with supplied rubber grommet (PoE models)
-* Microsoft Azure account with Blob Storage
+* Optional: Microsoft Azure account with Blob Storage, or an MQTT broker
 
 Installation
 ------------
@@ -196,13 +197,13 @@ Additional Controls
 Azure Storage Configuration
 ===========================
 
-Configure Azure Blob Storage for automatic uploads to a container:
+Azure Blob Storage uploads are **disabled by default**. Enable them in the camera settings to upload snapshots to a container.
 
 Required Information
 --------------------
 
 1. **Storage Account Name:** Your Azure storage account name
-2. **Container Name:** Target container within storage account  
+2. **Container Name:** Target container within storage account
 3. **SAS Token:** Shared Access Signature token with write permissions
 
 Setup Steps
@@ -210,13 +211,14 @@ Setup Steps
 
 1. In camera web interface, go to **Services** → **Camera** → **Camera Settings**
 2. Scroll to **Azure Storage Settings**
-3. Fill in the three required fields:
+3. Check **Enable Azure Blob Storage Upload**
+4. Fill in the three required fields:
 
    * **Storage Account Name:** ``yourstorageaccount``
    * **Container Name:** ``your-container``
    * **SAS Token:** ``?sv=2023-01-03&st=...`` (include the leading ``?``)
 
-4. Save settings
+5. Save settings
 
 Getting Azure SAS Token
 ------------------------
@@ -235,6 +237,56 @@ Getting Azure SAS Token
 
 .. warning::
    Keep your SAS token secure. Set appropriate expiration dates and minimal required permissions.
+
+MQTT Configuration
+==================
+
+The camera can publish snapshots and status data to an MQTT broker. MQTT is **disabled by default** and can be used alongside or instead of Azure uploads.
+
+What Gets Published
+-------------------
+
+* **{topic}/snapshot** -- Raw JPEG snapshot image (optional, enabled by default when MQTT is on)
+* **{topic}/status** -- JSON status message with timestamp, file size, device metrics, camera settings, and image metrics
+
+Setup Steps
+-----------
+
+1. In camera web interface, go to **Services** → **Camera** → **Camera Settings**
+2. Scroll to **MQTT Settings**
+3. Check **Enable MQTT Publishing**
+4. Configure the connection:
+
+   * **Broker Host:** Hostname or IP of your MQTT broker (e.g. ``mqtt.example.com``)
+   * **Port:** ``1883`` for plain, ``8883`` for TLS
+   * **Username / Password:** Optional, depends on broker configuration
+   * **Base Topic:** e.g. ``cameras/site1/cam1``
+
+5. Save settings
+
+MQTT Options
+------------
+
+* **QoS Level:** 0 (fire and forget), 1 (at least once), or 2 (exactly once). Default: 1
+* **Retain Messages:** When enabled, the broker keeps the last snapshot so new subscribers receive it immediately. Default: on
+* **Publish Snapshot Image:** Toggle whether the raw JPEG binary is published to ``{topic}/snapshot``. The status JSON is always published. Default: on
+
+Status JSON Fields
+------------------
+
+The status message published to ``{topic}/status`` includes:
+
+* ``timestamp`` -- UTC ISO 8601 timestamp
+* ``size`` -- Snapshot file size in bytes
+* ``interval`` -- Upload interval in seconds
+* ``customer``, ``camera`` -- Camera identity
+* ``version``, ``commit`` -- Installed software version
+* ``brightness``, ``contrast``, ``saturation``, ``gain``, ``exposure_auto``, ``wb_auto`` -- Camera hardware settings
+* ``load``, ``mem_available_kb``, ``uptime_sec``, ``flash_used_pct``, ``ip`` -- Device metrics
+* ``img_r``, ``img_g``, ``img_b``, ``img_brightness``, ``img_green_pct``, ``img_diff_pct`` -- Image metrics (when enabled)
+
+.. tip::
+   You can use MQTT without Azure. For a local-only setup, enable MQTT and leave Azure disabled.
 
 S3 Storage Configuration
 ========================
@@ -304,15 +356,6 @@ Customer and Camera Information
 
 * **Customer Name:** Identifier for your organization. This is the folder name of all the snapshots of this camera in the Azure Blob Storage container.
 * **Camera Name:** Unique identifier for this camera (defaults to serial number). This is the folder name of the camera and filename of the latest snapshot of this camera.
-
-Audio Settings
---------------
-
-* **Enable Audio Recording:** Toggle audio capture on/off
-* **Audio Duration:** Length of audio clips (seconds)
-
-.. note::
-   Audio recording is disabled by default and may not be available on all models.
 
 Monitoring
 ----------
@@ -422,34 +465,38 @@ Change Default Password Immediately
 Network Access Control
 ----------------------
 
-Block All Internet Access Except Azure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Restrict Internet Access
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-The camera should only communicate with Microsoft Azure services, if the cloud connectivity is desired. Configure your firewall/router to:
+The camera should only communicate with the services you have enabled. Configure your firewall/router to allow only the necessary destinations:
 
-**Only allow outbound connections to:**
+**Azure uploads (if enabled):**
 
-* ``*.blob.core.windows.net`` (Azure Blob Storage)
-* ``*.core.windows.net`` (Azure endpoints)
-* Port 443 (HTTPS) for secure uploads
+* ``*.blob.core.windows.net`` (Azure Blob Storage) on port 443 (HTTPS)
+
+**MQTT (if enabled):**
+
+* Your MQTT broker host on the configured port (default 1883, or 8883 for TLS)
 
 Router/Firewall Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Create a dedicated VLAN for IoT devices including the camera
-2. Apply strict egress filtering allowing only Azure domains
+2. Apply strict egress filtering allowing only required destinations
 3. Block all other outbound internet traffic from camera IP
 
 **Example firewall rules:**
 ::
 
-    # Allow Azure Blob Storage
+    # Allow Azure Blob Storage (if enabled)
     ALLOW camera_ip -> *.blob.core.windows.net:443
-    ALLOW camera_ip -> *.core.windows.net:443
-    
+
+    # Allow MQTT broker (if enabled)
+    ALLOW camera_ip -> mqtt_broker_ip:1883
+
     # Block all other internet access
     DENY camera_ip -> * (internet)
-    
+
     # Allow local network access for management
     ALLOW local_network -> camera_ip:80
 
@@ -571,6 +618,7 @@ Azure Upload Issues
 Azure Upload Not Working
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+* Verify **Enable Azure Blob Storage Upload** is checked in camera settings
 * Verify all three Azure fields are filled correctly:
 
   - Storage Account Name (no special characters)
@@ -580,7 +628,7 @@ Azure Upload Not Working
 * Check internet connectivity from camera's network
 * Confirm Azure storage account is active and accessible
 * **Check firewall rules** - ensure Azure domains are allowed
-* Review upload interval setting (minimum 10 seconds)
+* Review upload interval setting (minimum 30 seconds)
 
 Image Quality Issues
 --------------------
