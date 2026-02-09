@@ -7,7 +7,7 @@ On-device software for the **AVI-1-1** OpenWrt camera (MediaTek MT7628AN, MIPS).
 - **OpenWrt 22.03.5** (r20134-5f15225c1e) — BusyBox ash, NOT bash
 - **POSIX sh only** — no arrays, no `[[ ]]`, no `${var//pat/rep}`, no `local -a`, no process substitution `<()`
 - ~128 MB RAM, limited flash — no Node, no Python, no heavy runtimes
-- Camera: USB UVC (AS-2MUSB12J) via v4l2-ctl direct capture (mjpg-streamer optional for live streaming)
+- Camera: USB UVC (AS-2MUSB12J) via mjpg-streamer (used for both snapshots and live streaming)
 - GPIO 491 controls USB load switch (must be toggled before camera access)
 - Audio: ALSA `hw:0,0`, S16_LE, 32000 Hz, 2ch
 
@@ -16,7 +16,7 @@ On-device software for the **AVI-1-1** OpenWrt camera (MediaTek MT7628AN, MIPS).
 ```
 openwrt_7628/
 ├── bin/
-│   ├── u3.sh              # Main capture loop: snapshot → privacy mask → Azure upload
+│   ├── u3.sh              # Main capture loop: snapshot → privacy mask → image metrics → Azure upload → MQTT
 │   ├── camsetup.sh         # Applies v4l2 camera hardware settings from .env
 │   └── report_ip.sh        # Sends system metrics to InfluxDB (runs every minute via cron)
 ├── etc/
@@ -30,7 +30,7 @@ openwrt_7628/
 ├── usr/lib/lua/luci/
 │   ├── controller/camera.lua  # LuCI routes: camera page, env settings, snapshot endpoint, setup endpoint
 │   ├── view/
-│   │   ├── camera.htm         # Live stream page with controls, version info, update checker
+│   │   ├── camera.htm         # Snapshot-first camera page with click-to-stream, version info, update checker
 │   │   └── env.htm            # Settings form — writes /root/.env and UCI mjpg-streamer config
 │   ├── view/themes/bootstrap-dark/
 │   │   └── header.htm         # Custom LuCI header with AVI branding
@@ -45,12 +45,15 @@ All runtime config is in `/root/.env` — a flat file of `KEY="value"` pairs, so
 Key variables (see `root/example.env` for full list):
 - `STORAGE_ACCOUNT_NAME`, `CONTAINER_NAME`, `SAS_TOKEN` — Azure Blob Storage
 - `CUSTOMER`, `CAMNAME` — blob path prefix: `CUSTOMER/DATE/CAMNAME/snapshot_TIME.jpg`
-- `UPLOAD_INTERVAL` — seconds between capture cycles (5–3600)
+- `UPLOAD_INTERVAL` — seconds between capture cycles (30–3600)
 - `POLYGON` — ImageMagick privacy mask coordinates ("x1,y1 x2,y2 ...")
-- `CAM_*` — v4l2 hardware controls (brightness, contrast, gain, etc.)
+- `CAM_*` — v4l2 hardware controls (brightness, contrast, gain, WB temp, exposure mode/value, power line freq, etc.)
 - `UPTIME_PING` — heartbeat URL pinged on successful capture
 - `INFLUX_*` — InfluxDB v2 credentials for metrics reporting
 - `AUDIO_ENABLED`, `AUDIO_DURATION` — audio recording toggle and duration
+- `IMAGE_METRICS_ENABLED` — toggle for RGB/brightness/GCC/frame-diff computation (~6s per cycle on MIPS)
+- `MQTT_ENABLED`, `MQTT_BROKER`, `MQTT_PORT`, `MQTT_USERNAME`, `MQTT_PASSWORD` — MQTT broker connection
+- `MQTT_TOPIC`, `MQTT_QOS`, `MQTT_RETAIN`, `MQTT_UPLOAD_IMAGE` — MQTT publishing options
 
 **UCI** is only used for mjpg-streamer settings (`/etc/config/mjpg-streamer`), managed via `uci` commands in `env.htm`.
 
@@ -60,7 +63,7 @@ Key variables (see `root/example.env` for full list):
 u3_service start_service():
   GPIO 491 HIGH + sleep 10       (one-time per service start)
   camsetup.sh                     (one-time per service start)
-  launch loop → u3.sh + sleep
+  launch loop → u3.sh + sleep (min 30s, max 3600s)
 
 u3.sh (each cycle):
        1. Source /root/.env
@@ -68,11 +71,19 @@ u3.sh (each cycle):
        3. If AUDIO_ENABLED: record from /tmp/audio_stream.fifo → WAV → upload to Azure
        4. capture_snapshot() → /tmp/snapshot_TIME.jpg
           - mjpg-streamer running? → curl localhost:8080 snapshot
-          - otherwise → v4l2-ctl --stream-mmap (direct, no daemon)
+          - otherwise → briefly start mjpg-streamer, grab snapshot, stop it
        5. blacken_regions (ImageMagick polygon if POLYGON set)
-       6. Heartbeat ping to UPTIME_PING
-       7. Upload snapshot to Azure (latest + timestamped)
-       8. Cleanup temp files
+       6. If IMAGE_METRICS_ENABLED: compute_image_metrics (RGB, brightness, GCC, frame diff)
+       7. cp snapshot → /tmp/latest_snapshot.jpg (for LuCI camera UI)
+       8. Heartbeat ping to UPTIME_PING
+       9. Upload snapshot to Azure (latest + timestamped)
+      10. If MQTT_ENABLED: publish_to_mqtt (snapshot image + status JSON with metrics)
+      11. Cleanup temp files
+
+Camera UI (camera.htm):
+  - Default: shows /tmp/latest_snapshot.jpg, auto-refreshes every 30s
+  - Click image → starts mjpg-streamer for 5min live stream with countdown timer
+  - Stream auto-stops after timeout, falls back to snapshot view
 
 On failure: exit 1 → procd respawn → start_service() re-runs GPIO + camsetup
 Watchdog cron: only starts service if enabled in rc.d AND not running
@@ -88,8 +99,9 @@ Watchdog cron: only starts service if enabled in rc.d AND not running
 5. Installs crontab (backs up existing)
 6. Copies `example.env` → `/root/.env` only if `.env` doesn't exist
 7. Installs LuCI files (controller, views, i18n, header, logo)
-8. Enables and restarts services (u3_service, cron, uhttpd — mjpg-streamer is opt-in)
-9. Writes `/etc/avi_version.env` with version/commit info
+8. Installs `mosquitto-client` package (for MQTT publishing)
+9. Enables and restarts services (u3_service, cron, uhttpd — mjpg-streamer is opt-in)
+10. Writes `/etc/avi_version.env` with version/commit info
 
 The repo tree mirrors the device filesystem: `openwrt_7628/bin/u3.sh` → `/bin/u3.sh`.
 
@@ -100,11 +112,12 @@ The repo tree mirrors the device filesystem: `openwrt_7628/bin/u3.sh` → `/bin/
 - **Error handling**: Check command exit codes. Use `|| exit 1` or `|| return 1` for critical failures.
 - **Temp files**: Write to `/tmp/`, clean up with `rm -f` after use.
 - **Locking**: Use `flock` to prevent concurrent instances of u3.sh.
-- **LuCI views**: HTM templates with `<%lua%>` blocks. Use `luci.xml.pcdata()` for escaping user content.
-- **LuCI controller**: Lua module using `luci.dispatcher` entry points.
+- **LuCI views**: HTM templates with `<%lua%>` blocks. Use `luci.xml.pcdata()` for escaping user content. No emojis — use plain ASCII text for all UI labels and messages.
+- **LuCI controller**: Lua module using `luci.dispatcher` entry points. Key endpoints: `camera` (main page), `camera/env` (settings), `camera/snapshot` (live capture), `camera/latest` (cached snapshot via `nixio.fs.readfile`), `camera/stream_toggle` / `camera/stream_status` (on-demand streaming).
 - **Config values**: Always provide defaults with `${VAR:-default}` pattern.
 - **Quoting**: Always quote `"$variables"` in shell scripts — unquoted expansion breaks on spaces.
 - **No new dependencies**: The device has limited flash. Don't add packages without confirming they're available in OpenWrt 22.03.
+- **Feature toggles**: Boolean features in `.env` use `"true"`/`"false"` strings. In shell: `if [ "${VAR:-true}" = "true" ]`. In env.htm: checkbox with `value="1"`, read as `http.formvalue("name") and "true" or "false"`, default to `"true"` when missing from `.env`.
 
 ## Verifying changes
 

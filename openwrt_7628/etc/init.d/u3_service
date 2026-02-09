@@ -42,7 +42,7 @@ start_service() {
         case "$INTERVAL" in
             '"'"''"'"'|*[!0-9]*) INTERVAL=60 ;;
             *)
-                if [ "$INTERVAL" -lt 5 ]; then INTERVAL=5; fi
+                if [ "$INTERVAL" -lt 30 ]; then INTERVAL=30; fi
                 if [ "$INTERVAL" -gt 3600 ]; then INTERVAL=3600; fi
                 ;;
         esac

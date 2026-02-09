@@ -290,7 +290,9 @@ if capture_snapshot "$SNAPSHOT_FILE"; then
     blacken_regions "$SNAPSHOT_FILE"
 
     # Compute image metrics (before cp overwrites previous frame)
-    compute_image_metrics "$SNAPSHOT_FILE"
+    if [ "${IMAGE_METRICS_ENABLED:-true}" = "true" ]; then
+        compute_image_metrics "$SNAPSHOT_FILE"
+    fi
 
     # Keep a persistent copy for the LuCI camera UI
     cp "$SNAPSHOT_FILE" /tmp/latest_snapshot.jpg
