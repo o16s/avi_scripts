@@ -120,17 +120,18 @@ upload_to_azure() {
 capture_snapshot() {
     output_file="$1"
     if pgrep mjpg_streamer >/dev/null 2>&1; then
-        # mjpg-streamer has /dev/video0, use HTTP snapshot
+        # mjpg-streamer already running, grab snapshot via HTTP
         logger -p daemon.info -t "u3.sh" "mjpg-streamer active, using HTTP snapshot"
         curl -s --max-time 10 "http://localhost:8080/?action=snapshot" > "$output_file" && [ -s "$output_file" ]
         return $?
     fi
-    # Direct v4l2 capture — no streaming daemon needed
-    logger -p daemon.info -t "u3.sh" "Capturing snapshot via v4l2-ctl"
-    v4l2-ctl -d /dev/video0 \
-        --set-fmt-video=width=1280,height=720,pixelformat=MJPG \
-        --stream-mmap --stream-count=11 --stream-skip=10 \
-        --stream-to="$output_file" 2>/dev/null && [ -s "$output_file" ]
+    # Briefly start mjpg-streamer for a clean capture
+    logger -p daemon.info -t "u3.sh" "Starting mjpg-streamer for snapshot capture"
+    /etc/init.d/mjpg-streamer start 2>/dev/null
+    sleep 2
+    curl -s --max-time 10 "http://localhost:8080/?action=snapshot" > "$output_file"
+    /etc/init.d/mjpg-streamer stop 2>/dev/null
+    [ -s "$output_file" ]
 }
 
 # --- Main ---

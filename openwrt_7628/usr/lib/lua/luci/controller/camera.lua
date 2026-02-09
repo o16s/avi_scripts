@@ -34,22 +34,18 @@ function action_snapshot()
     -- Check if mjpg-streamer is running
     local mjpg_running = (sys.exec("pgrep mjpg_streamer 2>/dev/null") or "") ~= ""
 
-    if mjpg_running then
-        snapshot_data = sys.exec("curl -s --max-time 5 'http://localhost:8080/?action=snapshot' 2>/dev/null")
-    else
-        sys.exec("v4l2-ctl -d /dev/video0 "
-            .. "--set-fmt-video=width=1280,height=720,pixelformat=MJPG "
-            .. "--stream-mmap --stream-count=11 --stream-skip=10 "
-            .. "--stream-to=" .. tmp_file .. " 2>/dev/null")
-        local f = nixio.open(tmp_file, "r")
-        if f then
-            local stat = f:stat()
-            if stat and stat.size > 0 then
-                snapshot_data = f:read(stat.size)
-            end
-            f:close()
-        end
-        os.remove(tmp_file)
+    local started_mjpg = false
+    if not mjpg_running then
+        -- Briefly start mjpg-streamer for a clean capture
+        sys.exec("/etc/init.d/mjpg-streamer start 2>/dev/null")
+        sys.exec("sleep 2")
+        started_mjpg = true
+    end
+
+    snapshot_data = sys.exec("curl -s --max-time 5 'http://localhost:8080/?action=snapshot' 2>/dev/null")
+
+    if started_mjpg then
+        sys.exec("/etc/init.d/mjpg-streamer stop 2>/dev/null")
     end
 
     if snapshot_data and #snapshot_data > 1000 then
