@@ -34,7 +34,14 @@ if [ -f "$INSTALL_DIR/.env" ]; then
     echo "Existing .env found, preserving credentials."
     . "$INSTALL_DIR/.env"
     MQTT_PASS="$MQTT_PASSWORD"
-    HTTP_PASS="$HTTP_API_PASSWORD"
+    # HTTP_API_PASSWORD was added later; generate if missing
+    if [ -n "${HTTP_API_PASSWORD:-}" ]; then
+        HTTP_PASS="$HTTP_API_PASSWORD"
+    else
+        echo "Generating HTTP API password (not found in existing .env)..."
+        HTTP_PASS="$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 16)"
+        printf 'HTTP_API_PASSWORD=%s\n' "$HTTP_PASS" >> "$INSTALL_DIR/.env"
+    fi
 else
     echo "Generating credentials..."
     MQTT_PASS="$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 16)"
