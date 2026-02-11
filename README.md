@@ -42,6 +42,16 @@ Then logout and log back into LuCI.
 
 > **Note:** Services page conflicts can occur with duplicate lua controller files.
 
+## BB-400 Gateway (MQTT Broker)
+
+Install the NanoMQ MQTT broker on a BB-400 industrial gateway:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/o16s/avi_scripts/main/bb400_gateway/install.sh | sh
+```
+
+This sets up a Docker-based NanoMQ broker with auto-generated credentials at `/opt/avi-gateway/`. Re-run the same command to update configuration while preserving existing credentials.
+
 ## Offline Deployment
 
 For cameras without internet access, use `deploy.sh` from a local machine:

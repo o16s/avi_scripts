@@ -1,0 +1,14 @@
+# Installed via https://github.com/o16s/avi_scripts/blob/main/bb400_gateway/install.sh
+# To update, re-run:
+#   curl -fsSL https://raw.githubusercontent.com/o16s/avi_scripts/main/bb400_gateway/install.sh | sh
+
+services:
+  nanomq:
+    image: emqx/nanomq:latest
+    container_name: nanomq
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "8081:8081"
+    volumes:
+      - ./nanomq.conf:/etc/nanomq.conf
