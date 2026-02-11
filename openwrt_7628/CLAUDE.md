@@ -86,21 +86,39 @@ On failure: exit 1 → procd respawn → start_service() re-runs GPIO + camsetup
 Watchdog cron: only starts service if enabled in rc.d AND not running
 ```
 
-## install.sh deployment
+## Deployment
 
-`install.sh` (repo root) runs on-device and:
-1. Downloads the repo tarball from GitHub
-2. Copies `openwrt_7628/bin/*.sh` → `/bin/`
-3. Copies `openwrt_7628/etc/config/*` → `/etc/config/`
-4. Copies `openwrt_7628/etc/init.d/*` → `/etc/init.d/` (chmod +x)
-5. Installs crontab (backs up existing)
-6. Copies `example.env` → `/root/.env` only if `.env` doesn't exist
+The repo tree mirrors the device filesystem: `openwrt_7628/bin/u3.sh` → `/bin/u3.sh`.
+
+All file-copy and service-management logic lives in **`install_common.sh`** (repo root). Both deployment paths call it with the same interface:
+
+```
+sh install_common.sh <source_dir> <version> <commit> <date>
+```
+
+`install_common.sh` handles:
+1. Copies `bin/*.sh` → `/bin/` (chmod +x)
+2. Copies `etc/config/*` → `/etc/config/`
+3. Copies `etc/init.d/*` → `/etc/init.d/` (chmod +x)
+4. Installs crontab (backs up existing)
+5. Copies `example.env` → `/root/.env` only if `.env` doesn't exist
+6. Copies additional `root/*` files
 7. Installs LuCI files (controller, views, i18n, header, logo)
-8. Installs `mosquitto-client` package (for MQTT publishing)
+8. Removes deprecated services (e.g. audio-capture)
 9. Enables and restarts services (u3_service, cron, uhttpd — mjpg-streamer is opt-in)
 10. Writes `/etc/avi_version.env` with version/commit info
 
-The repo tree mirrors the device filesystem: `openwrt_7628/bin/u3.sh` → `/bin/u3.sh`.
+**`install.sh`** — on-device installer (requires internet on camera):
+1. Installs packages via `opkg` (v4l-utils, mosquitto-client)
+2. Downloads repo tarball from GitHub
+3. Fetches version info from GitHub API
+4. Calls `install_common.sh`
+
+**`deploy.sh`** — offline deployer (runs on macOS/Linux, cameras need no internet):
+1. Downloads `.ipk` packages with dependency resolution (`--fetch-packages`)
+2. Fetches version info from GitHub API
+3. Bundles `openwrt_7628/`, packages, and `install_common.sh` into a tarball
+4. For each target: uploads bundle via scp, installs packages, calls `install_common.sh`
 
 ## Conventions
 

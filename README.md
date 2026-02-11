@@ -40,12 +40,16 @@ rm -rf /tmp/luci-*
 ```
 Then logout and log back into LuCI.
 
-**Audio capture:** Must be manually enabled via environment variables and service:
-```bash
-/etc/init.d/audio-capture enable
-```
-
 > **Note:** Services page conflicts can occur with duplicate lua controller files.
+
+## Offline Deployment
+
+For cameras without internet access, use `deploy.sh` from a local machine:
+
+```bash
+./deploy.sh --fetch-packages          # download .ipk packages once
+./deploy.sh root@192.168.1.100        # deploy to camera over SSH
+```
 
 ## Support
 
