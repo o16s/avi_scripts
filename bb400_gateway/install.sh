@@ -34,12 +34,15 @@ if [ -f "$INSTALL_DIR/.env" ]; then
     echo "Existing .env found, preserving credentials."
     . "$INSTALL_DIR/.env"
     MQTT_PASS="$MQTT_PASSWORD"
+    HTTP_PASS="$HTTP_API_PASSWORD"
 else
-    echo "Generating MQTT credentials..."
+    echo "Generating credentials..."
     MQTT_PASS="$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 16)"
+    HTTP_PASS="$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 16)"
     cat > "$INSTALL_DIR/.env" <<EOF
 MQTT_USER=$MQTT_USER
 MQTT_PASSWORD=$MQTT_PASS
+HTTP_API_PASSWORD=$HTTP_PASS
 EOF
     chmod 600 "$INSTALL_DIR/.env"
 fi
@@ -50,7 +53,7 @@ curl -fsSL "$GITHUB_RAW/docker-compose.yml" -o "$INSTALL_DIR/docker-compose.yml"
 curl -fsSL "$GITHUB_RAW/nanomq.conf" -o "$INSTALL_DIR/nanomq.conf"
 
 # -- Substitute password into config --
-sed -i.bak "s/__MQTT_PASSWORD__/$MQTT_PASS/g" "$INSTALL_DIR/nanomq.conf"
+sed -i.bak -e "s/__MQTT_PASSWORD__/$MQTT_PASS/g" -e "s/__HTTP_API_PASSWORD__/$HTTP_PASS/g" "$INSTALL_DIR/nanomq.conf"
 rm -f "$INSTALL_DIR/nanomq.conf.bak"
 
 # -- Start services --
@@ -63,13 +66,14 @@ echo "====================================="
 echo " AVI Gateway - NanoMQ MQTT Broker"
 echo "====================================="
 echo ""
-echo "MQTT Broker:  localhost:1883"
-echo "HTTP API:     localhost:8081"
-echo "Username:     $MQTT_USER"
-echo "Password:     $MQTT_PASS"
+echo "MQTT Broker (port 1883):"
+echo "  Username:  $MQTT_USER"
+echo "  Password:  $MQTT_PASS"
 echo ""
-echo "HTTP API access:"
-echo "  curl -u $MQTT_USER:<password> http://<this-device-ip>:8081/api/v4/clients"
+echo "HTTP API (port 8081):"
+echo "  Username:  $MQTT_USER"
+echo "  Password:  $HTTP_PASS"
+echo "  Example:   curl -u $MQTT_USER:$HTTP_PASS http://<this-device-ip>:8081/api/v4/clients"
 echo ""
 echo "Camera configuration:"
 echo "  MQTT_HOST=<this-device-ip>"
