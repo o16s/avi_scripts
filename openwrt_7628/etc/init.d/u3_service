@@ -12,6 +12,7 @@ start_service() {
     echo 491 > /sys/class/gpio/export 2>/dev/null || true
     echo out > /sys/class/gpio/gpio491/direction
     echo 1 > /sys/class/gpio/gpio491/value
+    echo 0 > /sys/class/leds/green:wlan/brightness
     logger -p daemon.info -t "u3_service" "Waiting 10s for USB camera to settle"
     sleep 10
 
